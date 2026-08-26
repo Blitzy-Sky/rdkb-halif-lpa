@@ -27,9 +27,9 @@
 * progress callback type, and the eleven functions that download, enumerate, enable,
 * disable and delete eSIM profiles on the eUICC and that bring the Local Profile
 * Assistant up and tear it down. The declared surface is eSIM and eUICC management
-* and nothing else: no declaration here concerns power management, and the repository
-* specification records under `Description` (`docs/pages/halSpec.md`) that an earlier
-* power-state description of this component was incorrect.
+* and nothing else: no declaration in this header concerns power management, and
+* `Description` in the repository specification (`docs/pages/halSpec.md`) records the
+* same surface.
 *
 * The interface is caller-driven and synchronous. Every function returns int and
 * reports its outcome through that return value, and the one asynchronous channel -
@@ -88,8 +88,8 @@
  */
 typedef enum _Cellular_PreferredUICC_t
 {
-    CELLULAR_UICC_USIM     = 0,  /**< Removable Universal Integrated Circuit Card carrying a Universal Subscriber Identity Module, that is, a physical SIM inserted into the device. The enumeration is explicitly 0-based at this member, so a zero-initialised field of this type reads as this value. */
-    CELLULAR_UICC_ESIM,          /**< Embedded Universal Integrated Circuit Card - the eUICC onto which the profiles this interface downloads, enables, disables and deletes are installed. It follows CELLULAR_UICC_USIM and so takes the value 1. */
+    CELLULAR_UICC_USIM     = 0,  /*!< Removable Universal Integrated Circuit Card carrying a Universal Subscriber Identity Module, that is, a physical SIM inserted into the device. The enumeration is explicitly 0-based at this member, so a zero-initialised field of this type reads as this value. */
+    CELLULAR_UICC_ESIM,          /*!< Embedded Universal Integrated Circuit Card - the eUICC onto which the profiles this interface downloads, enables, disables and deletes are installed. It follows CELLULAR_UICC_USIM and so takes the value 1. */
 } CellularPreferredUICC_t;
 
 /**
@@ -109,10 +109,10 @@ typedef enum _Cellular_PreferredUICC_t
  */
 typedef enum _CellularDeviceSimStatus_t
 {
-   SIM_PREPARATION_PENDING = 1,    /**< Preparation has been requested and has not started. The enumeration is explicitly 1-based at this member, so no member of this type has the value 0 and a zero-initialised field carries no member of it. */
-   SIM_PREPARATION_INPROGRESS,     /**< Preparation is under way and has not finished; value 2. This interface does not state which operations, if any, are rejected while a SIM is in this condition. */
-   SIM_PREPARATION_DOWNLOADED,     /**< The material needed to prepare the SIM has been downloaded to it, but preparation is not yet complete; value 3. It is not equivalent to SIM_PREPARATION_DONE and does not on its own make a profile usable. */
-   SIM_PREPARATION_DONE,           /**< Preparation has completed; value 4. This is the terminal value of the four, and this interface states no member representing a preparation failure. */
+   SIM_PREPARATION_PENDING = 1,    /*!< Preparation has been requested and has not started. The enumeration is explicitly 1-based at this member, so no member of this type has the value 0 and a zero-initialised field carries no member of it. */
+   SIM_PREPARATION_INPROGRESS,     /*!< Preparation is under way and has not finished; value 2. This interface does not state which operations, if any, are rejected while a SIM is in this condition. */
+   SIM_PREPARATION_DOWNLOADED,     /*!< The material needed to prepare the SIM has been downloaded to it, but preparation is not yet complete; value 3. It is not equivalent to SIM_PREPARATION_DONE and does not on its own make a profile usable. */
+   SIM_PREPARATION_DONE,           /*!< Preparation has completed; value 4. This is the terminal value of the four, and this interface states no member representing a preparation failure. */
 } CellularDeviceSimStatus_t;
 
 /**********************************************************************
@@ -166,10 +166,9 @@ typedef enum _CellularDeviceSimStatus_t
  *          documents rather than one test for all of them. The affected declaration
  *          states the hazard again on itself, and `Internal Error Handling` sets out
  *          the caller action.
- * @note RETURN_ERR is not defined here, and not by anything this header includes.
- *       Earlier revisions of these comments named it as the failure code; the defined
- *       name is RETURN_ERROR, and a comparison written against RETURN_ERR does not
- *       compile.
+ * @note RETURN_ERR is not defined here, and not by anything this header includes. The
+ *       defined failure code is RETURN_ERROR, and a comparison written against
+ *       RETURN_ERR does not compile.
  * @note TRUE and FALSE are each guarded by an ifndef, so where a translation unit has
  *       already defined either of them this header leaves that definition in place. A caller
  *       that has defined them to values other than 1 and 0 changes what the affected
@@ -180,16 +179,16 @@ typedef enum _CellularDeviceSimStatus_t
  *       time or at run time which revision of this contract it is building against;
  *       the repository specification records that under `Variability Management`.
  */
-#define RETURN_ERROR        (-1)   /**< Failure, in the vocabulary the ten functions other than cellular_esim_download_profile_with_activationcode() are documented against. The requested operation did not complete, and no output parameter may be relied on. The interface gives no reason for the failure beyond this value. */
-#define RETURN_OK           (0)    /**< Success, in the same vocabulary. The requested operation completed and the post-conditions on the declaration hold. This value equals FALSE, which is the collision the warning above describes. */
+#define RETURN_ERROR        (-1)   /*!< Failure, in the vocabulary the ten functions other than cellular_esim_download_profile_with_activationcode() are documented against. The requested operation did not complete, and no output parameter may be relied on. The interface gives no reason for the failure beyond this value. */
+#define RETURN_OK           (0)    /*!< Success, in the same vocabulary. The requested operation completed and the post-conditions on the declaration hold. This value equals FALSE, which is the collision the warning above describes. */
 #ifndef TRUE
-#define TRUE                (1)    /**< Success, in the vocabulary cellular_esim_download_profile_with_activationcode() alone is documented against. It is a non-zero value, so it is not equal to RETURN_OK. */
+#define TRUE                (1)    /*!< Success, in the vocabulary cellular_esim_download_profile_with_activationcode() alone is documented against. It is a non-zero value, so it is not equal to RETURN_OK. */
 #endif
 #ifndef FALSE
-#define FALSE               (0)    /**< Failure, in that same one-declaration vocabulary. It equals RETURN_OK, so a caller that tests the affected function against RETURN_OK reads a documented failure as a success. */
+#define FALSE               (0)    /*!< Failure, in that same one-declaration vocabulary. It equals RETURN_OK, so a caller that tests the affected function against RETURN_OK reads a documented failure as a success. */
 #endif
 
-/** 
+/**
  * @brief One eSIM profile as reported by the eUICC: its identifier, whether it is
  *        active, and the operator name it carries.
  *
@@ -217,9 +216,9 @@ typedef enum _CellularDeviceSimStatus_t
  */
 typedef  struct
 {
-    char iccid[32];          /**< ICCID (Integrated Circuit Card Identification) of this profile, in the format of ITU-T Recommendation E.118, and the only handle this interface offers for addressing a profile. The value is a 20-digit string while the field is 32 bytes, so the field is wider than the value it carries: a caller bounds reads by 32 bytes and takes the length of the value from the 20-digit contract stated on cellular_esim_enable_profile(), not from the field size. This interface does not state whether the implementation zero-terminates the value or what the remaining bytes contain. */
-    int  profileState;       /**< Whether this profile is currently active: 00 (disabled) or 01 (enabled). Those two values are the whole documented domain of the field, and cellular_esim_enable_profile() and cellular_esim_disable_profile() are what move a profile between them. This interface does not state the value carried by a profile that has just been downloaded, so a caller that needs the profile active enables it explicitly rather than inferring it from a download. */
-    char profileName[16];    /**< Human-readable operator name of the profile, for example "Xfinity Mobile", "Comcast" or "CRTC". The field is 16 bytes including any terminator, so an operator name longer than that cannot be represented in it; a caller bounds reads by 16 bytes and must not assume the name is complete. This interface does not define a vocabulary of names, so the value is compared as vendor-supplied text rather than matched against a fixed set. */
+    char iccid[32];          /*!< ICCID (Integrated Circuit Card Identification) of this profile, in the format of ITU-T Recommendation E.118, and the only handle this interface offers for addressing a profile. The value is a 20-digit string while the field is 32 bytes, so the field is wider than the value it carries: a caller bounds reads by 32 bytes and takes the length of the value from the 20-digit contract stated on cellular_esim_enable_profile(), not from the field size. This interface does not state whether the implementation zero-terminates the value or what the remaining bytes contain. */
+    int  profileState;       /*!< Whether this profile is currently active: 00 (disabled) or 01 (enabled). Those two values are the whole documented domain of the field, and cellular_esim_enable_profile() and cellular_esim_disable_profile() are what move a profile between them. This interface does not state the value carried by a profile that has just been downloaded, so a caller that needs the profile active enables it explicitly rather than inferring it from a download. */
+    char profileName[16];    /*!< Human-readable operator name of the profile, for example "Xfinity Mobile", "Comcast" or "CRTC". The field is 16 bytes including any terminator, so an operator name longer than that cannot be represented in it; a caller bounds reads by 16 bytes and must not assume the name is complete. This interface does not define a vocabulary of names, so the value is compared as vendor-supplied text rather than matched against a fixed set. */
 } eSIMProfileStruct;
 
 /**
@@ -370,15 +369,7 @@ typedef int (*cellular_sim_download_progress_callback)( char *progress );
 *                              strings documented on
 *                              cellular_sim_download_progress_callback show that a
 *                              code is decoded and that an SM-DP+ address is checked
-*                              in the course of the download, and one illustrative
-*                              value, "1$smdp.example.com$MATCHING-ID-PLACEHOLDER",
-*                              shows the kind of string this parameter takes. That
-*                              value is deliberately inert: `example.com` is reserved
-*                              for documentation use by RFC 2606 and the matching ID
-*                              is a placeholder, so no part of it will be accepted by
-*                              any server, it must not be copied into a call as if it
-*                              were a code, and it must not be read as a syntax this
-*                              interface guarantees.
+*                              in the course of the download.
 *                              The caller allocates the buffer and owns it throughout,
 *                              and it is the caller that eventually releases it -
 *                              though not on the strength of this call returning, for
@@ -465,14 +456,13 @@ typedef int (*cellular_sim_download_progress_callback)( char *progress );
 *          implementation stops reading the buffer. This interface performs no redaction
 *          of its own and states nothing about whether an implementation logs, stores or
 *          transmits the value beyond the download it authorises.
-* @note Failure detail: this interface offers none. Earlier revisions of this comment
-*       directed a caller to obtain a description through lpaGetErrorCodeDescription()
-*       and lpaGetErrorCode(). Neither function is declared by this header or by
-*       anything else in this repository, so that mechanism is not part of this
-*       interface and cannot be called; code written against it does not link. The
-*       return value is the only failure information available at the call site, and
-*       `Logging and debugging requirements` names the vendor log, lpa_vendor_hal.log
-*       under /var/tmp/ or /rdklogs/logs/, as where the reason is recorded.
+* @note Failure detail: this interface offers none. It declares no error-description
+*       call: lpaGetErrorCodeDescription() and lpaGetErrorCode() are declared neither
+*       by this header nor anywhere else in this repository, so code written against
+*       them does not link. The return value is the only failure information available
+*       at the call site, and `Logging and debugging requirements` names the vendor
+*       log, lpa_vendor_hal.log under /var/tmp/ or /rdklogs/logs/, as where the reason
+*       is recorded.
 * @note Blocking: the call is synchronous - the outcome is the return value, and no part
 *       of the result arrives later except through the progress callback. It contacts a
 *       remote SM-DP+ server, so its duration depends on a network round trip rather
@@ -750,7 +740,7 @@ int cellular_esim_download_profile_from_defaultsmdp(char* smdp);
 */
 int cellular_esim_get_profile_info(eSIMProfileStruct **profile_list, int *nb_profiles);
 
-/** 
+/**
 * @brief Activates the installed MNO (Mobile Network Operator) profile whose ICCID matches
 *        the one supplied.
 *
@@ -832,7 +822,7 @@ int cellular_esim_get_profile_info(eSIMProfileStruct **profile_list, int *nb_pro
 */
 int cellular_esim_enable_profile(char* iccid, int iccid_size);
 
-/** 
+/**
 * @brief Deactivates the installed eSIM profile whose ICCID matches the one supplied,
 *        leaving it installed.
 *
@@ -914,7 +904,7 @@ int cellular_esim_enable_profile(char* iccid, int iccid_size);
 */
 int cellular_esim_disable_profile(char* iccid, int iccid_size);
 
-/** 
+/**
 * @brief Permanently removes the installed eSIM profile whose ICCID matches the one
 *        supplied.
 *
@@ -1042,15 +1032,10 @@ int cellular_esim_delete_profile(char* iccid, int iccid_size);
 *         on a cause this interface does not report, so no retry policy, count or interval
 *         is specified here.
 *
-* @note Blocking: this interface does not establish whether this call may block, and the
-*       ambiguity is deliberate rather than an omission. `Blocking calls` records that this
-*       repository's specification has claimed both that initialization must block until
-*       the required hardware becomes available and that no function here may block or
-*       suspend execution; both were statements of the specification rather than of the
-*       interface definition, and the declaration establishes neither. **A caller must not
-*       assume either behaviour**, and must not depend on this call returning promptly at
-*       bring-up. No timeout or completion-time bound is specified anywhere in this
-*       repository, so a caller that needs one imposes and enforces its own.
+* @note Blocking: this interface does not specify whether this call blocks, and it
+*       specifies no completion-time bound. **A caller must not assume either
+*       behaviour**, must not depend on this call returning promptly at bring-up, and
+*       imposes and enforces its own bound where one is required.
 * @note Thread safety: this interface is not required to be thread safe. `Threading Model`
 *       places on the calling module the obligation to serialise all of its interactions
 *       with these APIs, so this call must complete before any other call into this
@@ -1064,7 +1049,7 @@ int cellular_esim_delete_profile(char* iccid, int iccid_size);
 */
 int cellular_esim_lpa_init(void);
 
-/** 
+/**
 * @brief Tears the Local Profile Assistant down and releases the resources it holds.
 *
 * Deactivates the module and releases what the implementation allocated internally,
@@ -1127,7 +1112,7 @@ int cellular_esim_lpa_init(void);
 */
 int cellular_esim_lpa_exit(void);
 
-/** 
+/**
 * @brief Reads the EID (eUICC Identifier) of the device's eSIM, and reports only whether
 *        the read succeeded.
 *
