@@ -8,16 +8,24 @@
 | Not recorded | Maintenance release. Removed an unwanted character from the interface header. | 1.0.1 |
 | 2026-08-24 | Specification rewritten against the interface header: the `eSIM` and `eUICC` subject matter corrected, the complete API surface documented, and the asynchronous notification, memory and error-handling contracts restated from the declarations. | Unreleased |
 
-**Provenance of this page.** It was renamed from `docs/pages/LpaHalSpec.md` to `docs/pages/halSpec.md` in the same change that rewrote it against the canonical topic set. Git records a rename only where the two versions still resemble each other, and a full rewrite does not, so `git log --follow -- docs/pages/halSpec.md` begins at that change: the revisions before it are reached with `git log -- docs/pages/LpaHalSpec.md`. That resemblance is measured, and the threshold is 50% by default, so lowering it to git's floor \- `git log --follow -M1% -- docs/pages/halSpec.md` \- is worth trying first: where it pairs the two paths it shows both stretches of history in one listing, and where the rewrite kept too little of the original for git to pair them at any threshold the second command above remains the only route to the earlier revisions.
+**Provenance of this page.** It was renamed from `docs/pages/LpaHalSpec.md` to the canonical `docs/pages/` specification page in the same change that rewrote it against the canonical topic set. Git records a rename only where the two versions still resemble each other, and a full rewrite does not, so a `--follow` listing of the canonical path begins at that change, and the revisions before it are reached by listing the legacy path instead:
+
+```sh
+git log --follow -- docs/pages/halSpec.md
+git log --follow -M1% -- docs/pages/halSpec.md
+git log -- docs/pages/LpaHalSpec.md
+```
+
+That resemblance is measured, and the threshold is 50% by default, so lowering it to git's floor with the second command above is worth trying first: where it pairs the two paths it shows both stretches of history in one listing, and where the rewrite kept too little of the original for git to pair them at any threshold the third command remains the only route to the earlier revisions.
 
 Four version identities apply to this component, and this document keeps them apart deliberately, because they do not share a value:
 
-- **Document revision** \- the `Version` column above. The rewrite recorded in the last row is not yet covered by a release tag, so it is marked `Unreleased` rather than given a number this repository has not issued. The `1.0.1` release carries no date in `CHANGELOG.md`, so none is stated for it here.
+- **Document revision** \- the `Version` column above. The rewrite recorded in the last row is not yet covered by a release tag, so it is marked `Unreleased` rather than given a number this repository has not issued. The `1.0.1` release carries no date in the repository-root changelog, so none is stated for it here.
 - **Interface version** \- `include/lpa_hal.h` defines **no** interface version macro. There is no constant a caller can test, at compile time or at run time, to discover which revision of this interface it is building against. See `Variability Management`.
 - **Release tag** \- the nearest tag is `1.0.1`. This repository carries exactly two tags, `1.0.0` and `1.0.1`.
 - **Generated-site version string** \- `docs/generate_docs.sh` derives `PROJECT_VERSION` from `git describe --tags` and passes it to the documentation generator, so the title of the generated site carries a string of the form `1.0.1-<commits>-g<abbreviated-commit>`. That is the nearest tag plus the number of commits made since it, and it advances with every commit; it is a build label and **not** a version of either the interface or this document. A reader comparing two generated sites should compare the tag portion and treat the suffix as a build coordinate.
 
-*Derived from `CHANGELOG.md`, this repository's tag list, `include/lpa_hal.h` and `docs/generate_docs.sh`.*
+*Derived from the repository-root changelog, this repository's tag list, `include/lpa_hal.h` and `docs/generate_docs.sh`.*
 
 ## Acronyms
 
@@ -41,7 +49,7 @@ Four version identities apply to this component, and this document keeps them ap
 
 ## Description
 
-The `LPA` (Local Profile Assistant) `HAL` is the `RDK-B` interface for **`eSIM` profile management on an `eUICC`**. It abstracts a vendor's Local Profile Assistant implementation so that `RDK-B` software can download, activate, deactivate, remove and enumerate `MNO` profiles, and read the identity of the `eUICC` itself, without depending on a particular modem, `eUICC` or `OEM` implementation.
+The `LPA` (Local Profile Assistant) `HAL` is the `RDK-B` interface for `eSIM` **profile management on an `eUICC`**. It abstracts a vendor's Local Profile Assistant implementation so that `RDK-B` software can download, activate, deactivate, remove and enumerate `MNO` profiles, and read the identity of the `eUICC` itself, without depending on a particular modem, `eUICC` or `OEM` implementation.
 
 The diagram below illustrates the high-level software architecture of the LPA HAL module stack, demonstrating how it fits within the broader system context.
 
@@ -60,12 +68,12 @@ The interface covers five things, and nothing else:
 - **Profile download** \- installing a profile onto the `eUICC`, from an activation code, from an `SM-DS` address, or from a default `SM-DP+` address.
 - **Profile lifecycle** \- enabling, disabling and permanently deleting an installed profile, each selected by its `ICCID`.
 - **Profile inspection** \- enumerating the `MNO` profiles present on the `eUICC` with their `ICCID`, state and name.
-- **`eUICC` identity** \- reading the `EID` and the `eUICC` information.
+- `eUICC` identity \- reading the `EID` and the `eUICC` information.
 - **Module lifecycle** \- bringing the Local Profile Assistant up and tearing it down.
 
 Earlier revisions of this document described this component as an interface for managing device power states, with narrative about wake events, resource control and battery life. That description was incorrect: no declaration in `include/lpa_hal.h` concerns power management, and the whole of the declared surface is `cellular_esim_*` profile and `eUICC` management. The description has been rewritten from the header. The one accurate power-related statement, that this HAL takes no part in power management, is retained under `Power Management Requirements`.
 
-*Derived from `include/lpa_hal.h` (the complete declared surface, lines 136-1195) and the `RDK-B` superproject `README.md` (component summary and the absence of an owning service). Where the two differed, the header governed.*
+*Derived from `include/lpa_hal.h` (the complete declared surface, lines 136-1195) and the `RDK-B` superproject README (component summary and the absence of an owning service). Where the two differed, the header governed.*
 
 ## Optional Components
 
@@ -117,7 +125,7 @@ This is compatible with the single-threaded expectation stated under `Blocking c
 
 #### Caller Responsibilities
 
-- **Free the profile array.** `cellular_esim_get_profile_info()` allocates the profile data it returns, and the caller must release that memory. This is the only allocation this interface hands to the caller, and it is stated on the declaration itself: *"The caller must free the dynamically allocated memory for profile data."*
+- **Free the profile array.** `cellular_esim_get_profile_info()` allocates the profile data it returns, and the caller must release that memory. This is the only allocation this interface hands to the caller, and it is stated on the declaration itself: <em>"The caller must free the dynamically allocated memory for profile data."</em>
 - **Own every buffer passed in, and do not reclaim it the moment the call returns.** The activation code, the `SM-DS` address, the `SM-DP+` address and the `ICCID` are all caller-supplied `char` buffers. The caller allocates them and keeps them valid for at least the duration of the call. **This interface does not state whether an implementation may retain a pointer beyond the call that received it**, so a buffer stays allocated and unmodified until the caller has established — by inspection of the implementation it integrates, or by contract with its supplier — either that the pointer is not retained or that the operation it was passed to has completed. Releasing, reusing or overwriting it belongs immediately after that point and not before, because an implementation that did retain the pointer may still be reading through it. A caller that can establish neither holds the buffer until it tears the module down. Where the buffer holds a protected value, `Logging and debugging requirements` states the overwrite obligation that this ordering governs, and states it in the same order.
 - **Zero-terminate every string.** All strings passed across this interface must be zero-terminated, so that string functions can determine their length and so that buffer manipulation cannot overrun.
 - **Respect the `ICCID` length contract.** `cellular_esim_enable_profile()`, `cellular_esim_disable_profile()` and `cellular_esim_delete_profile()` each take an `ICCID` documented as a 20-digit string together with its length, documented as 20. The `iccid` field of `eSIMProfileStruct` is a 32-byte buffer, so the buffer is larger than the value it carries; a caller must not infer the value length from the field size.
@@ -130,7 +138,7 @@ This is compatible with the single-threaded expectation stated under `Blocking c
 
 All implementations and all caller code must adhere to these requirements unless a specific declaration states otherwise in its own documentation. No memory footprint requirement is stated by this interface; see `Memory and performance requirements`.
 
-*Derived from `include/lpa_hal.h` lines 660-669 and 695-700 (the allocation and its unnamed deallocator), lines 743-757, 830-844 and 914-928 (the `ICCID` parameters) and lines 234-239 (`eSIMProfileStruct`).*
+<em>Derived from `include/lpa_hal.h` lines 660-669 and 695-700 (the allocation and its unnamed deallocator), lines 743-757, 830-844 and 914-928 (the `ICCID` parameters) and lines 234-239 (`eSIMProfileStruct`).</em>
 
 ### Power Management Requirements
 
@@ -200,7 +208,7 @@ The interface defines two status codes:
 
 Three properties of the error contract are defects rather than features, and a caller needs all three:
 
-1. **`RETURN_ERR` does not exist.** Earlier revisions of the documentation comments in `include/lpa_hal.h` named a failure code `RETURN_ERR` on all eleven declarations. No such macro is defined by this interface or by anything it includes, so caller code written against `RETURN_ERR` does not compile. Those comments now name `RETURN_ERROR`, which is the defined failure code and the one a caller compares against; the header retains a single warning recording the old spelling, so that a caller who met it in an earlier revision can see why it never resolved.
+1. `RETURN_ERR` **does not exist.** Earlier revisions of the documentation comments in `include/lpa_hal.h` named a failure code `RETURN_ERR` on all eleven declarations. No such macro is defined by this interface or by anything it includes, so caller code written against `RETURN_ERR` does not compile. Those comments now name `RETURN_ERROR`, which is the defined failure code and the one a caller compares against; the header retains a single warning recording the old spelling, so that a caller who met it in an earlier revision can see why it never resolved.
 2. **One function documents an incompatible convention, and the collision is silent.** `cellular_esim_download_profile_with_activationcode()` documents `TRUE` for success and `FALSE` for failure, where the other ten functions document `RETURN_OK` and `RETURN_ERROR`. Because `FALSE` and `RETURN_OK` are both `0`, **a caller that tests that one function's result against `RETURN_OK` reads a documented failure as a success.** The interface does not resolve which convention an implementation actually follows, so a caller must not assume: treat a non-zero result from that function as success only if it has confirmed the convention with its vendor, and do not reuse the comparison that is correct for the other ten.
 3. **There is no error-code retrieval API.** The declaration of the activation-code download directs a caller to obtain detail through `lpaGetErrorCodeDescription` and `lpaGetErrorCode`. **Neither of those two functions is declared in this repository**, by that header or any other, so the mechanism they imply is not part of this interface and a caller cannot rely on it. The status code is the only failure information this interface defines.
 
@@ -251,12 +259,12 @@ Because the status code is the only failure information this interface defines (
   - *Storage the caller allocated itself and never passed across this interface* — a working copy of an `ICCID`, an `EID`, `eUICC` information or an activation code — is overwritten as soon as the caller has finished with it, on **every** path including the failure path. A failed download, a failed read or a partially completed enumeration may have left part of a value in such a buffer, and nothing but the caller will clear it.
   - *A buffer the caller passed in* — the `ICCID` given to `cellular_esim_enable_profile()`, `cellular_esim_disable_profile()` or `cellular_esim_delete_profile()`, or the activation code given to `cellular_esim_download_profile_with_activationcode()` — is kept allocated and unmodified until the caller has established that the implementation does not retain the pointer, or that the operation it was passed to has completed, and is then overwritten immediately. This interface does not rule retention out (`Memory Model`), so an overwrite timed to the moment the call returns may corrupt a read a retaining implementation is still making; waiting until non-retention, release or completion is established and then clearing without further delay is the only order in which the two obligations are compatible. Establishing it by inspection or by contract is part of integrating a vendor implementation, and a caller that cannot establish it holds the buffer until it tears the module down and clears it then.
   - *Storage this interface returned* — the `eSIMProfileStruct` array from `cellular_esim_get_profile_info()` — is the caller's **only after that call has returned success**, which is the point at which ownership transfers. On success the caller overwrites the whole array in place and then releases it, on every path by which it finishes with the array, including a path where its own later processing failed part-way and including tear-down. On failure it does neither, for the reason in the next bullet.
-- **A failed call leaves nothing to clear and nothing that may be touched.** `cellular_esim_get_profile_info()` defines neither output on failure — see the `@post` on that declaration in [`include/lpa_hal.h`](../../include/lpa_hal.h) — so `*profile_list` may hold an uninitialised value, a stale value or a partially written pointer. Dereferencing it to overwrite the records, or handing it to a deallocator, is a use of an undefined pointer, and it would be caused by the clearing rule rather than prevented by it. A caller therefore does not read, clear, overwrite or release the returned array after a failed call; it confines its clearing to storage it allocated and initialised itself, which is safe on every path precisely because the caller knows what is in it. Initialising both the pointer and the count to a known value before the call is what lets a caller tell the two paths apart afterwards.
-- **A protected value has no second home.** It must not be copied into longer-lived storage — a data-model cache, a configuration file, an environment variable, a message queue or a retry buffer — and must not be passed to a component that has no need of it, because each copy is another buffer that has to be cleared and another sink that can leak. The interface defines no free, clear or scrub operation, so all of this is the caller's own responsibility; the per-declaration `@warning` blocks in [`include/lpa_hal.h`](../../include/lpa_hal.h) state the same obligations, in the same order, at each call site.
+- **A failed call leaves nothing to clear and nothing that may be touched.** `cellular_esim_get_profile_info()` defines neither output on failure — see the `@post` on that declaration in `include/lpa_hal.h` — so `*profile_list` may hold an uninitialised value, a stale value or a partially written pointer. Dereferencing it to overwrite the records, or handing it to a deallocator, is a use of an undefined pointer, and it would be caused by the clearing rule rather than prevented by it. A caller therefore does not read, clear, overwrite or release the returned array after a failed call; it confines its clearing to storage it allocated and initialised itself, which is safe on every path precisely because the caller knows what is in it. Initialising both the pointer and the count to a known value before the call is what lets a caller tell the two paths apart afterwards.
+- **A protected value has no second home.** It must not be copied into longer-lived storage — a data-model cache, a configuration file, an environment variable, a message queue or a retry buffer — and must not be passed to a component that has no need of it, because each copy is another buffer that has to be cleared and another sink that can leak. The interface defines no free, clear or scrub operation, so all of this is the caller's own responsibility; the per-declaration `@warning` blocks in `include/lpa_hal.h` state the same obligations, in the same order, at each call site.
 - **The absence of a granular error code does not license logging the input.** Where a call fails and the status value is the only information available (`Internal Error Handling`), the temptation is to log the argument that failed so that the failure can be diagnosed, and that is the single most likely way these rules get broken. The diagnostic records that the operation failed and on which profile index, never the identifier that was passed and never a fragment of it.
 - **The interface guarantees none of this.** It declares no scrubbing function, no opaque credential type, no sensitivity annotation and no flag by which a caller could ask an implementation to suppress its own logging, and it gives a caller no way to verify that an implementation observes these rules. A caller integrating a vendor implementation must therefore establish compliance by inspection or by contract, and must treat the absence of subscriber identity from a vendor log, core file or telemetry feed as unverified until it has done so.
 
-*Derived from this repository's previous specification revision (the log file, the severity ladder and the logging obligations); the protected set and the per-call-site obligations are derived from the `@warning` blocks on the declarations in [`include/lpa_hal.h`](../../include/lpa_hal.h), which carry the same rule at each call site.*
+*Derived from this repository's previous specification revision (the log file, the severity ladder and the logging obligations); the protected set and the per-call-site obligations are derived from the `@warning` blocks on the declarations in `include/lpa_hal.h`, which carry the same rule at each call site.*
 
 ### Memory and performance requirements
 
@@ -274,11 +282,11 @@ To ensure the highest quality and reliability, it is strongly recommended that t
 
 Both the HAL implementation and any software interacting with it must prioritize robust memory management: careful allocation, matching deallocation and explicit error handling. The ownership rules this interface defines are stated under `Memory Model`, and the one caller-owned allocation it hands out is the profile array returned by `cellular_esim_get_profile_info()`.
 
-**Documentation freshness.** Any change to a file this document cites as a source obliges a review of the topics that cite it. The sources are `include/lpa_hal.h`, `CHANGELOG.md`, `docs/generate_docs.sh` and the `RDK-B` superproject `README.md`. The responsible reviewer is the owner named in this repository's `.github/CODEOWNERS`, `@rdkcentral/rdkb-hal-advisory`. A renamed or removed declaration is the trigger that matters most, because every identifier this document names is asserted to exist in the header.
+**Documentation freshness.** Any change to a file this document cites as a source obliges a review of the topics that cite it. The sources are `include/lpa_hal.h`, the repository-root changelog, `docs/generate_docs.sh` and the `RDK-B` superproject README. The responsible reviewer is the owner named in this repository's `.github/CODEOWNERS`, `@rdkcentral/rdkb-hal-advisory`. A renamed or removed declaration is the trigger that matters most, because every identifier this document names is asserted to exist in the header.
 
 **Verification limit.** The `RDK-B` inventory records that this HAL has no owning middleware service and **is not available on the HUB6 or XER10 reference platforms**, so it requires other hardware to exercise. Every runtime statement in this document is therefore derived from the interface definition — the declarations and their documentation comments in `include/lpa_hal.h` — and from this repository's own specification. **None of it has been confirmed by executing the HAL on reference hardware, and none of it is presented as observed behavior.** Where this interface does not establish a behavior, this document says so rather than supplying a plausible value.
 
-*Derived from `.github/CODEOWNERS`, the `RDK-B` superproject `README.md` (platform availability) and this repository's previous specification revision.*
+*Derived from `.github/CODEOWNERS`, the `RDK-B` superproject README (platform availability) and this repository's previous specification revision.*
 
 ### Licensing
 
@@ -324,7 +332,7 @@ All HAL function prototypes and datatype definitions are available in the `lpa_h
 
 This topic describes how the objects and calls of this interface relate to one another. That relationship is what an integrator needs in order to sequence calls correctly and to interpret a failure, and it is not recoverable from the signatures alone.
 
-The interface has one central concept: the **`eSIM` profile**, an operator subscription installed onto the `eUICC` and identified by its `ICCID`. Everything the interface does either creates a profile, changes which profile is active, removes a profile, reports on the profiles present, or reports on the card that holds them.
+The interface has one central concept: the `eSIM` profile, an operator subscription installed onto the `eUICC` and identified by its `ICCID`. Everything the interface does either creates a profile, changes which profile is active, removes a profile, reports on the profiles present, or reports on the card that holds them.
 
 #### Object Lifecycles
 
@@ -334,15 +342,15 @@ The interface has one central concept: the **`eSIM` profile**, an operator subsc
 
 #### Method Sequencing
 
-- **`cellular_esim_lpa_init()` comes first.** It is documented as mandatory before any other function in this interface. This includes `cellular_esim_get_eid()` and `cellular_esim_get_euicc()`: this interface does not state that the two identity reads are exempt, so a caller should not treat them as callable beforehand.
+- `cellular_esim_lpa_init()` **comes first.** It is documented as mandatory before any other function in this interface. This includes `cellular_esim_get_eid()` and `cellular_esim_get_euicc()`: this interface does not state that the two identity reads are exempt, so a caller should not treat them as callable beforehand.
 - **Download before lifecycle.** `cellular_esim_enable_profile()`, `cellular_esim_disable_profile()` and `cellular_esim_delete_profile()` each act on a profile whose `ICCID` matches one already stored on the card, and each documents failure when no matching `ICCID` is found. A profile must therefore have been downloaded — or already present — before any of the three will succeed.
 - **Inspect to obtain an `ICCID`.** Since the three lifecycle calls are addressed by `ICCID`, `cellular_esim_get_profile_info()` is how a caller discovers the values it may pass.
-- **`cellular_esim_lpa_exit()` comes last**, before shutdown or once the functionality is no longer required.
+- `cellular_esim_lpa_exit()` **comes last**, before shutdown or once the functionality is no longer required.
 - **Everything else is unordered.** Beyond the constraints above, this interface states no ordering requirement between its functions.
 
 The declarations describe the *shape* of the three download arguments, and that shape is reproduced here schematically rather than as usable values: an activation code of the form `1$<smdp-address>$<matching-identifier>` — shown on the declaration as `1$smdp.example.com$REDACTED-MATCHING-ID` — an `SM-DS` address of the form `smds.example.net`, and an `SM-DP+` address of the form `smdp.example.com`.
 
-**These are placeholders, and deliberately not examples a reader can use.** An activation code is single-use credential material that authorises a profile download, and an `SM-DS` or `SM-DP+` address identifies the operator infrastructure a device provisions against, so neither this page nor the header publishes a live-format value for any of them: every host shown is a domain reserved for documentation by `RFC 2606` (`example.com`, `example.net` or a `.invalid` name), and every credential field is a redaction marker naming what belongs in its place rather than a value. The real values reach a caller from provisioning at run time and from the card, never by being copied out of documentation — see `Logging and debugging requirements` for the rule that forbids their disclosure, and the `@warning` on each of the three download declarations in [`include/lpa_hal.h`](../../include/lpa_hal.h) for what a caller owes an address before it hands one over.
+**These are placeholders, and deliberately not examples a reader can use.** An activation code is single-use credential material that authorises a profile download, and an `SM-DS` or `SM-DP+` address identifies the operator infrastructure a device provisions against, so neither this page nor the header publishes a live-format value for any of them: every host shown is a domain reserved for documentation by `RFC 2606` (`example.com`, `example.net` or a `.invalid` name), and every credential field is a redaction marker naming what belongs in its place rather than a value. The real values reach a caller from provisioning at run time and from the card, never by being copied out of documentation — see `Logging and debugging requirements` for the rule that forbids their disclosure, and the `@warning` on each of the three download declarations in `include/lpa_hal.h` for what a caller owes an address before it hands one over.
 
 **No `ICCID` or `EID` value is published anywhere in this documentation or in the header.** Both identify a subscriber's card and are personal data, so an example of either would be exactly the value this specification tells an implementer never to disclose. A caller or test author that needs an illustrative `ICCID` constructs one that deliberately fails the `ITU-T` Recommendation `E.118` check digit — the trailing Luhn digit — so that the value cannot be mistaken for, or provisioned as, a real card.
 
@@ -353,7 +361,7 @@ The declarations describe the *shape* of the three download arguments, and that 
 - **Initial state after download is unspecified.** The download functions install a profile; this interface does not state the value of `profileState` immediately afterwards. A caller that needs a profile enabled must call `cellular_esim_enable_profile()` explicitly rather than assume the download left it active.
 - **No predefined state model.** Earlier revisions of this document asserted a predefined model of component states with a defined set of valid transitions, and method restrictions tied to states such as `uninitialized` and `idle`. This interface defines no such model, and those states do not appear in it. What can be established from the declarations is drawn under `State Diagram`; no other transition or restriction is specified by this interface.
 
-*Derived from `include/lpa_hal.h` lines 234-239 (`profileState` and its two values), lines 345, 502 and 581 (the three download arguments and their schematic forms) with lines 57-69 (the interface-wide rule that every example value is schematic and that no `ICCID` or `EID` literal is published), lines 738-999 (the three `ICCID`-matched operations) and lines 1001-1087 (the module lifecycle).*
+<em>Derived from `include/lpa_hal.h` lines 234-239 (`profileState` and its two values), lines 345, 502 and 581 (the three download arguments and their schematic forms) with lines 57-69 (the interface-wide rule that every example value is schematic and that no `ICCID` or `EID` literal is published), lines 738-999 (the three `ICCID`-matched operations) and lines 1001-1087 (the module lifecycle).</em>
 
 ### Data Structures and Defines
 
@@ -366,7 +374,7 @@ Every public type and valued macro a caller constructs, populates or interprets 
 | `CellularPreferredUICC_t` | enumeration | `include/lpa_hal.h:89-93` | Which `UICC` type is preferred. |
 | `CellularDeviceSimStatus_t` | enumeration | `include/lpa_hal.h:110-116` | Preparation status of a device `SIM`. |
 
-**`eSIMProfileStruct`** is the only structure this interface defines, and it is populated by the implementation and read by the caller — never the other way round.
+`eSIMProfileStruct` is the only structure this interface defines, and it is populated by the implementation and read by the caller — never the other way round.
 
 | Member | Type | Constraint | Meaning |
 | --- | --- | --- | --- |
@@ -376,7 +384,7 @@ Every public type and valued macro a caller constructs, populates or interprets 
 
 The buffer sizes are the contract a caller must respect: the identifier field is wider than the value it carries, and the name field is 16 bytes including its terminator, so a longer operator name cannot be represented.
 
-**`cellular_sim_download_progress_callback`** is installed by `cellular_esim_download_profile_with_activationcode()`, the only function that accepts it. Its parameter and return semantics, and the values it delivers, are documented under `Asynchronous Notification Model`.
+`cellular_sim_download_progress_callback` is installed by `cellular_esim_download_profile_with_activationcode()`, the only function that accepts it. Its parameter and return semantics, and the values it delivers, are documented under `Asynchronous Notification Model`.
 
 **Status macros.** These are the values every function in this interface returns, with the exception noted under `Internal Error Handling`.
 
@@ -393,7 +401,7 @@ The buffer sizes are the contract a caller must respect: the identifier field is
 
 ### API Surface
 
-This interface declares **eleven** functions, all listed below by exact identifier. Per-API detail — argument ranges, pre-conditions, every return value and what a caller should do about each — is carried by the Doxygen block on each declaration in [`include/lpa_hal.h`](../../include/lpa_hal.h).
+This interface declares **eleven** functions, all listed below by exact identifier. Per-API detail — argument ranges, pre-conditions, every return value and what a caller should do about each — is carried by the Doxygen block on each declaration in [include/lpa_hal.h](../../include/lpa_hal.h).
 
 **Module lifecycle:**
 
@@ -424,7 +432,7 @@ This interface declares **eleven** functions, all listed below by exact identifi
 | --- | --- | --- |
 | `cellular_esim_get_profile_info` | `include/lpa_hal.h:751` | Retrieves the `MNO` profiles present on the card as a callee-allocated, caller-freed array, with a count. |
 
-**`eUICC` and `EID` information:**
+`eUICC` **and `EID` information:**
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
@@ -433,7 +441,7 @@ This interface declares **eleven** functions, all listed below by exact identifi
 
 **A gap in the last two, stated because it decides whether they are usable.** `cellular_esim_get_eid()` and `cellular_esim_get_euicc()` are each declared with an **empty parameter list** and an `int` return documented as a status code. They therefore declare **no out-parameter and no output buffer**, so this interface does not establish how the retrieved `EID` or `eUICC` information reaches the caller. A caller cannot determine from this interface where to read the result, and a test cannot assert on a value the interface gives it no way to obtain. Note also that an empty parameter list is not the same declaration as the explicit `(void)` used by `cellular_esim_lpa_init()` and `cellular_esim_lpa_exit()`.
 
-*Derived from `include/lpa_hal.h` lines 495, 574, 653, 736, 823, 907, 999, 1039, 1087, 1142 and 1195 — the complete set of declarations in the header.*
+*Derived from [include/lpa_hal.h](../../include/lpa_hal.h) lines 495, 574, 653, 736, 823, 907, 999, 1039, 1087, 1142 and 1195 — the complete set of declarations in the header.*
 
 ### Sequence Diagram
 
@@ -528,7 +536,7 @@ stateDiagram-v2
 
 Two further things are deliberately **not** drawn, for the same reason:
 
-- **`CellularDeviceSimStatus_t` is not a state machine here.** Its members read as a sequence — `SIM_PREPARATION_PENDING`, `SIM_PREPARATION_INPROGRESS`, `SIM_PREPARATION_DOWNLOADED`, `SIM_PREPARATION_DONE` — but no declared function takes or returns that type, and nothing in this interface says a device moves between those values or in what order. Drawing them would invent both the observability and the edges.
+- `CellularDeviceSimStatus_t` **is not a state machine here.** Its members read as a sequence — `SIM_PREPARATION_PENDING`, `SIM_PREPARATION_INPROGRESS`, `SIM_PREPARATION_DOWNLOADED`, `SIM_PREPARATION_DONE` — but no declared function takes or returns that type, and nothing in this interface says a device moves between those values or in what order. Drawing them would invent both the observability and the edges.
 - **The download progress messages are not states.** The values delivered through `cellular_sim_download_progress_callback` are progress reports on one call, not positions a profile occupies, and the interface does not state their order. They are listed under `Asynchronous Notification Model`.
 
 This interface specifies no transitions and no state-dependent restrictions at all, and nothing above should be read as supplying one.

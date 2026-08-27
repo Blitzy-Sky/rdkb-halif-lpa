@@ -28,7 +28,7 @@
 * disable and delete eSIM profiles on the eUICC and that bring the Local Profile
 * Assistant up and tear it down. The declared surface is eSIM and eUICC management
 * and nothing else: no declaration in this header concerns power management, and
-* `Description` in the repository specification (`docs/pages/halSpec.md`) records the
+* `Description` in the repository specification records the
 * same surface.
 *
 * The interface is caller-driven and synchronous. Every function returns int and
@@ -74,7 +74,7 @@
  *
  * @note No function declared in this header takes or returns this type, and none of
  *       the declared structures contains it. The repository specification records the
- *       same under `Data Structures and Defines` (`docs/pages/halSpec.md`): a caller
+ *       same under `Data Structures and Defines` in the HAL specification: a caller
  *       can construct a value but has nowhere in this interface to pass it, so no
  *       behaviour in this interface depends on it and none is asserted for it here.
  * @note The names in this interface are not drawn from one convention - an enumeration
@@ -98,7 +98,7 @@ typedef enum _Cellular_PreferredUICC_t
  *
  * @note No function declared in this header takes or returns this type, and none of the
  *       declared structures contains it, which the repository specification also
- *       records under `Data Structures and Defines` (`docs/pages/halSpec.md`). Nothing
+ *       records under `Data Structures and Defines` in the HAL specification. Nothing
  *       in this interface reports a value of this type to a caller, so a caller has no
  *       way to observe the progress it describes through this interface.
  * @note This interface exposes these values only. It does not state that a SIM moves
@@ -153,7 +153,7 @@ typedef enum _CellularDeviceSimStatus_t
  *
  * These four macros are the whole return vocabulary this interface defines. RETURN_OK
  * and RETURN_ERROR are the two status codes the repository specification lists under
- * `Internal Error Handling` (`docs/pages/halSpec.md`), and ten of the eleven functions
+ * `Internal Error Handling` in the HAL specification, and ten of the eleven functions
  * and the progress callback are documented against them. TRUE and FALSE are the values
  * the eleventh, cellular_esim_download_profile_with_activationcode(), is documented
  * against instead.
@@ -207,7 +207,7 @@ typedef enum _CellularDeviceSimStatus_t
  * @note The array of these records is allocated by cellular_esim_get_profile_info() and
  *       released by the caller. That is the only allocation this interface hands to a
  *       caller, and the repository specification states it under `Memory Model`
- *       (`docs/pages/halSpec.md`).
+ *       in the HAL specification.
  * @note The record is a snapshot of the card at the moment it was read. This interface
  *       does not state that it is updated when the card changes, so a caller that has
  *       enabled, disabled or deleted a profile re-reads rather than reusing it.
@@ -241,7 +241,7 @@ typedef  struct
  * Every function reports its outcome synchronously through its int return value. No
  * function reports a failure by any other route, and none of them has an out-of-band
  * error channel: the repository specification states under `Internal Error Handling`
- * (`docs/pages/halSpec.md`) that the status code is the only failure information this
+ * in the HAL specification that the status code is the only failure information this
  * interface defines. There is no second failure code, no error class, no errno-style
  * variable and no retrieval call, so a caller learns that an operation failed and
  * nothing further about why; the reason is recoverable only from the vendor log
@@ -269,7 +269,7 @@ typedef  struct
  * there is no registration or deregistration function here, so a caller has nothing
  * to unregister and no way to withdraw the function once it has been passed. The
  * repository specification states this under `Asynchronous Notification Model`
- * (`docs/pages/halSpec.md`), and notes that the other two download paths accept no
+ * in the HAL specification, and notes that the other two download paths accept no
  * callback and therefore report no intermediate progress at all.
  *
  * @param[in] progress Status message naming the stage reached. The pointer addresses
@@ -349,7 +349,7 @@ typedef int (*cellular_sim_download_progress_callback)( char *progress );
 * other two are cellular_esim_download_profile_from_smds() and
 * cellular_esim_download_profile_from_defaultsmdp() - and it is the only one that
 * reports progress, which the repository specification states under `Optional
-* Components` (`docs/pages/halSpec.md`).
+* Components` in the HAL specification.
 *
 * @param[in] ActivationCodeStr Activation code identifying the profile to download and
 *                              the server that holds it. Its syntax is not established
@@ -660,7 +660,7 @@ int cellular_esim_download_profile_from_defaultsmdp(char* smdp);
 * cellular_esim_disable_profile() and cellular_esim_delete_profile() are addressed by,
 * so it is the entry point to the profile lifecycle rather than a diagnostic. It is also
 * the only function in this interface that allocates on the caller's behalf, which the
-* repository specification states under `Memory Model` (`docs/pages/halSpec.md`).
+* repository specification states under `Memory Model` in the HAL specification.
 *
 * @param[out] profile_list Address of a caller-held eSIMProfileStruct* through which the
 *                          implementation returns the array it allocated. The caller
@@ -757,7 +757,7 @@ int cellular_esim_get_profile_info(eSIMProfileStruct **profile_list, int *nb_pro
 *                  format of ITU-T Recommendation E.118. The caller allocates the
 *                  buffer and owns it throughout, and it is the caller that eventually
 *                  releases it - though not on the strength of this call returning, for
-*                  the reason below; `Memory Model` (`docs/pages/halSpec.md`) places
+*                  the reason below; `Memory Model` in the HAL specification places
 *                  both the
 *                  allocation and the zero termination on the caller. This interface does
 *                  not specify whether the implementation retains the pointer beyond the
@@ -840,7 +840,7 @@ int cellular_esim_enable_profile(char* iccid, int iccid_size);
 *                  The caller allocates the buffer and owns it throughout, and it is the
 *                  caller that eventually releases it - though not on the strength of this
 *                  call returning, for the reason below; `Memory Model`
-*                  (`docs/pages/halSpec.md`) places both the allocation and the zero
+*                  in the HAL specification places both the allocation and the zero
 *                  termination on the caller. This interface does not specify whether the
 *                  implementation retains the pointer beyond the call, and it declares no
 *                  call through which a retained pointer could be withdrawn, so the caller
@@ -915,7 +915,7 @@ int cellular_esim_disable_profile(char* iccid, int iccid_size);
 * which requires whatever credential that path needs. Profile state lives on the card
 * rather than in the module, so deletion outlives the lifetime of the HAL module; the
 * repository specification states that under `Persistence Model`
-* (`docs/pages/halSpec.md`). This interface does not state whether an enabled profile may
+* in the HAL specification. This interface does not state whether an enabled profile may
 * be deleted while it is active, nor what becomes of the device's subscription if it is.
 *
 * @param[in] iccid ICCID of the profile to remove, as a 20-digit string in the format
@@ -999,7 +999,7 @@ int cellular_esim_delete_profile(char* iccid, int iccid_size);
 *
 * Configures the LPA module, establishes that the modem is ready and sets up the
 * dependencies and parameters the eSIM operations need. It is mandatory: the repository
-* specification states under `Initialization and Startup` (`docs/pages/halSpec.md`) that
+* specification states under `Initialization and Startup` in the HAL specification that
 * it must precede every other function here, including the two identity reads, and that a
 * vendor implementation must check that the eUICC and the modem are present and functional
 * so that later operations do not fail against unprepared hardware.
@@ -1054,7 +1054,7 @@ int cellular_esim_lpa_init(void);
 *
 * Deactivates the module and releases what the implementation allocated internally,
 * including memory, file handles and any threads it started; `Threading Model` and `Memory
-* Model` (`docs/pages/halSpec.md`) place that cleanup obligation on the implementation. A
+* Model` in the HAL specification place that cleanup obligation on the implementation. A
 * caller invokes it before shutdown, or once eSIM functionality is no longer needed, and it
 * is the last call a caller makes into this interface.
 *
