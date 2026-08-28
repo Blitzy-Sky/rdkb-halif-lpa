@@ -73,7 +73,7 @@ The interface covers five things, and nothing else:
 
 Earlier revisions of this document described this component as an interface for managing device power states, with narrative about wake events, resource control and battery life. That description was incorrect: no declaration in `include/lpa_hal.h` concerns power management, and the whole of the declared surface is `cellular_esim_*` profile and `eUICC` management. The description has been rewritten from the header. The one accurate power-related statement, that this HAL takes no part in power management, is retained under `Power Management Requirements`.
 
-*Derived from `include/lpa_hal.h` (the complete declared surface, lines 136-1195) and the `RDK-B` superproject README (component summary and the absence of an owning service). Where the two differed, the header governed.*
+*Derived from `include/lpa_hal.h` (the complete declared surface, lines 89-1229) and the `RDK-B` superproject README (component summary and the absence of an owning service). Where the two differed, the header governed.*
 
 ## Optional Components
 
@@ -82,7 +82,7 @@ This interface declares no optional build-time components. There is no feature m
 - `cellular_esim_download_profile_with_activationcode()`, `cellular_esim_download_profile_from_smds()` and `cellular_esim_download_profile_from_defaultsmdp()` are **alternative** download paths, not a sequence. A deployment may use any one of them, and need not support all three.
 - Download progress reporting is available on the activation-code path **only**. `cellular_sim_download_progress_callback` is accepted by `cellular_esim_download_profile_with_activationcode()` and by no other function, so the other two download paths report no intermediate progress at all. This interface does not state whether the callback argument may be omitted.
 
-*Derived from `include/lpa_hal.h` lines 338 (the callback typedef) and 468, 547 and 626 (the three download declarations).*
+*Derived from `include/lpa_hal.h` lines 340 (the callback typedef) and 489, 572 and 651 (the three download declarations).*
 
 ## Component Runtime Execution Requirements
 
@@ -101,7 +101,7 @@ Third-party vendors are responsible for providing a concrete implementation of `
 
 Whether that check may **block** is contested by this specification's own history and is not settled by the interface. `Blocking calls` states the conflict in full; the outcome for a caller is that it must not assume either behavior from `cellular_esim_lpa_init()`.
 
-*Derived from `include/lpa_hal.h` lines 1001-1039 and 1041-1087 (the two lifecycle blocks) and from this repository's previous specification revision, whose vendor obligations are retained.*
+*Derived from `include/lpa_hal.h` lines 996-1050 and 1052-1113 (the two lifecycle blocks) and from this repository's previous specification revision, whose vendor obligations are retained.*
 
 ### Threading Model
 
@@ -111,7 +111,7 @@ Vendors may implement internal threading and event mechanisms to meet their oper
 
 One gap matters to a caller and is stated rather than guessed: this interface does not specify which thread `cellular_sim_download_progress_callback` is invoked on, nor whether it may be invoked concurrently with the download call that installed it. A caller must therefore treat its callback body as though it may run on a thread it does not own.
 
-*Derived from `include/lpa_hal.h` lines 280-338 (the callback and its unspecified thread) and from this repository's previous specification revision, which stated the thread-safety position.*
+*Derived from `include/lpa_hal.h` lines 260-340 (the callback and its unspecified thread) and from this repository's previous specification revision, which stated the thread-safety position.*
 
 ### Process Model
 
@@ -138,7 +138,7 @@ This is compatible with the single-threaded expectation stated under `Blocking c
 
 All implementations and all caller code must adhere to these requirements unless a specific declaration states otherwise in its own documentation. No memory footprint requirement is stated by this interface; see `Memory and performance requirements`.
 
-<em>Derived from `include/lpa_hal.h` lines 660-669 and 695-700 (the allocation and its unnamed deallocator), lines 743-757, 830-844 and 914-928 (the `ICCID` parameters) and lines 234-239 (`eSIMProfileStruct`).</em>
+<em>Derived from `include/lpa_hal.h` lines 665-679 and 711-719 (the allocation `cellular_esim_get_profile_info()` performs and the `@note` on its unnamed deallocator), lines 756-772, 838-855 and 921-939 (the `ICCID` parameters) and lines 217-222 (`eSIMProfileStruct`).</em>
 
 ### Power Management Requirements
 
@@ -177,7 +177,7 @@ The `progress` argument carries a status message. The declarations enumerate the
 
 Two of those strings embed values that vary at run time — the pending notification count and the notification identifier — so a caller matching on them must match on a prefix rather than on the whole string. This interface does not state the order in which the messages are delivered, nor that every message appears in every download, so a caller must not treat the list as a sequence.
 
-*Derived from `include/lpa_hal.h` lines 280-338 (the typedef and its documented values) and lines 495, 574 and 653 (which download functions accept a callback).*
+*Derived from `include/lpa_hal.h` lines 260-340 (the typedef and its documented values) and lines 489, 572 and 651 (which download functions accept a callback).*
 
 ### Blocking calls
 
@@ -191,7 +191,7 @@ Two of those strings embed values that vary at run time — the pending notifica
 
 **Single-threaded callers.** These APIs are expected to be called from a single-threaded context per caller, which is why an implementation must avoid long-running work on the calling thread wherever it can, or perform that work asynchronously internally.
 
-*Derived from `include/lpa_hal.h` lines 495, 574 and 653 (the server-facing download paths) and from the two conflicting statements in this repository's previous specification revision.*
+*Derived from `include/lpa_hal.h` lines 489, 572 and 651 (the server-facing download paths) and from the two conflicting statements in this repository's previous specification revision.*
 
 ### Internal Error Handling
 
@@ -212,7 +212,7 @@ Three properties of the error contract are defects rather than features, and a c
 2. **One function documents an incompatible convention, and the collision is silent.** `cellular_esim_download_profile_with_activationcode()` documents `TRUE` for success and `FALSE` for failure, where the other ten functions document `RETURN_OK` and `RETURN_ERROR`. Because `FALSE` and `RETURN_OK` are both `0`, **a caller that tests that one function's result against `RETURN_OK` reads a documented failure as a success.** The interface does not resolve which convention an implementation actually follows, so a caller must not assume: treat a non-zero result from that function as success only if it has confirmed the convention with its vendor, and do not reuse the comparison that is correct for the other ten.
 3. **There is no error-code retrieval API.** The declaration of the activation-code download directs a caller to obtain detail through `lpaGetErrorCodeDescription` and `lpaGetErrorCode`. **Neither of those two functions is declared in this repository**, by that header or any other, so the mechanism they imply is not part of this interface and a caller cannot rely on it. The status code is the only failure information this interface defines.
 
-*Derived from `include/lpa_hal.h` lines 201-212 (the four status macros), lines 98-109 (the interface-wide warnings on the absent `RETURN_ERR` spelling and the divergent convention), lines 248-271 (the interface-wide error contract) and lines 412-443 (the divergent convention and the undeclared retrieval functions on the activation-code declaration).*
+*Derived from `include/lpa_hal.h` lines 182-188 (the four status macros), lines 161-177 (the interface-wide warnings on the absent `RETURN_ERR` spelling and the divergent convention), lines 238-258 (the interface-wide error contract) and lines 433-444 and 459-465 (the divergent convention and the undeclared retrieval functions on the activation-code declaration).*
 
 ### Persistence Model
 
@@ -220,9 +220,11 @@ There is no requirement for the HAL to persist any setting information. A caller
 
 The profiles this interface manages are a separate matter, and what can be said about them is narrower than it looks. One thing is established: `cellular_esim_delete_profile()` is documented to remove a profile **permanently**, so a deletion is not something a caller can expect to be undone.
 
-**Whether an installed profile survives tear-down, process exit or a device restart is not specified by this interface.** `cellular_esim_lpa_exit()` is documented to deactivate the module and release its resources — the *module's* resources — and nothing in `include/lpa_hal.h`, in this repository's previous specification revision or in any other file here states that installed profiles persist beyond it, or that they are discarded. A caller must therefore assume neither. Where it needs to know what is on the card after a later `cellular_esim_lpa_init()`, it re-reads the inventory with `cellular_esim_get_profile_info()` rather than relying on a snapshot taken before the exit, and a test must not assert either outcome. An earlier revision of this page asserted that profile state "outlives any single lifetime of the HAL module"; the interface does not establish that, so the claim is withdrawn rather than restated more carefully.
+**An installed profile does survive tear-down, and this interface says so twice.** `cellular_esim_lpa_exit()` releases the *module's* resources, and its own documentation is explicit about what it leaves alone: installed profiles live on the eUICC and are unaffected, tear-down neither disables nor removes a profile, and only `cellular_esim_delete_profile()` removes one. Its success post-condition repeats the point — installed profiles are unchanged. The delete declaration closes the same loop from the other side: the removal survives `cellular_esim_lpa_exit()` and any later bring-up, *because the profile lived on the card*. So profile state outlives a single lifetime of the module, and a caller may rely on that.
 
-*Derived from `include/lpa_hal.h` lines 909-999 (permanent deletion) and lines 1049-1063 (the `@post` of tear-down, which covers the module's resources and says nothing about installed profiles), and from this repository's previous specification revision, which states only that the HAL is not required to persist setting information. The absence of a persistence guarantee is derived from the absence of any statement of one anywhere in this repository.*
+**What is not established is anything beyond the module's lifetime.** No statement anywhere in this repository addresses a process exit, a power cycle or a device restart, and none addresses what survives when `cellular_esim_lpa_exit()` returns `RETURN_ERROR` — that path explicitly leaves the module's own condition unestablished. A caller that must know the card's contents in either situation re-reads the inventory with `cellular_esim_get_profile_info()` after a later `cellular_esim_lpa_init()` rather than relying on a snapshot, and a test must not assert an outcome across a restart. The narrower rule holds regardless: an array read before a delete or a tear-down is a stale snapshot and is re-read rather than reused.
+
+*Derived from `include/lpa_hal.h` lines 908-912 (the removal is permanent), lines 954-956 (the removal survives tear-down and any later bring-up, because the profile lived on the card), lines 1061-1064 (installed profiles live on the eUICC and are unaffected by tear-down, which neither disables nor removes one) and lines 1077-1080 (the `@post` statements of tear-down, the first stating that installed profiles are unchanged and the second leaving the error path unestablished), and from this repository's previous specification revision, which states that the HAL is not required to persist setting information. The absence of any guarantee across a process exit, power cycle or device restart is derived from the absence of any statement of one anywhere in this repository.*
 
 ## Non functional requirements
 
@@ -274,7 +276,7 @@ An implementation should not contribute disproportionately to memory or CPU util
 
 Two performance-relevant properties do follow from the declarations and are worth planning around. The three download functions depend on a network round trip to a remote server, so their duration is not bounded by local computation. And `cellular_esim_get_profile_info()` allocates on behalf of the caller, so its cost grows with the number of profiles installed on the `eUICC`.
 
-*Derived from `include/lpa_hal.h` lines 495, 574 and 653 (the three network-facing download declarations) and lines 660-736 (the allocation `cellular_esim_get_profile_info()` performs on the caller's behalf), and from the absence of any stated footprint or timing requirement anywhere in this repository.*
+*Derived from `include/lpa_hal.h` lines 489, 572 and 651 (the three network-facing download declarations) and lines 653-741 (the allocation `cellular_esim_get_profile_info()` performs on the caller's behalf), and from the absence of any stated footprint or timing requirement anywhere in this repository.*
 
 ### Quality Control
 
@@ -311,7 +313,7 @@ Two facts qualify that for this interface in particular, and both are stated bec
 - **There is no compile-time variability.** `include/lpa_hal.h` defines no feature macro that adds or removes a declaration — this interface has no equivalent of the `MOCA_VAR` flag some other `RDK-B` HALs use — and `docs/generate_docs.sh` passes no additional preprocessor definitions to the documentation generator. Every declaration is present in every build, and there is no variant of this interface to select.
 - **There is no interface version macro.** The header defines no version constant, so a caller cannot interrogate the interface revision at compile time or at run time and cannot compile conditionally against one. The only version identity available is the repository's release tag; see `Version History`.
 
-*Derived from `include/lpa_hal.h` (the include guard at lines 112-113 and the complete macro set at lines 201-212) and `docs/generate_docs.sh`.*
+*Derived from `include/lpa_hal.h` (the include guard at lines 64-65 and the complete macro set at lines 182-188) and `docs/generate_docs.sh`.*
 
 ### Platform or Product Customization
 
@@ -348,9 +350,9 @@ The interface has one central concept: the `eSIM` profile, an operator subscript
 - `cellular_esim_lpa_exit()` **comes last**, before shutdown or once the functionality is no longer required.
 - **Everything else is unordered.** Beyond the constraints above, this interface states no ordering requirement between its functions.
 
-The declarations describe the *shape* of the three download arguments, and that shape is reproduced here schematically rather than as usable values: an activation code of the form `1$<smdp-address>$<matching-identifier>` — shown on the declaration as `1$smdp.example.com$REDACTED-MATCHING-ID` — an `SM-DS` address of the form `smds.example.net`, and an `SM-DP+` address of the form `smdp.example.com`.
+The three download arguments are not all described to the same depth, and the difference matters to a test author. **The activation code carries no stated syntax at all**: `cellular_esim_download_profile_with_activationcode()` states on its `ActivationCodeStr` parameter that no field list, no separator, no character set and no maximum length is established by this interface, and that the grammar a code must satisfy is fixed by the issuing party, by the ecosystem specification the code comes from, or by the vendor implementation - not here. No activation-code value appears anywhere in the header. The other two arguments do carry a worked value each, both naming test infrastructure rather than a live operator: an `SM-DS` address in URL form, shown as `oem-smds-json.demo.gemalto.com`, and an `SM-DP+` address as a fully qualified name, shown as `smdp-plus.test.gsma.com`.
 
-**These are placeholders, and deliberately not examples a reader can use.** An activation code is single-use credential material that authorises a profile download, and an `SM-DS` or `SM-DP+` address identifies the operator infrastructure a device provisions against, so neither this page nor the header publishes a live-format value for any of them: every host shown is a domain reserved for documentation by `RFC 2606` (`example.com`, `example.net` or a `.invalid` name), and every credential field is a redaction marker naming what belongs in its place rather than a value. The real values reach a caller from provisioning at run time and from the card, never by being copied out of documentation — see `Logging and debugging requirements` for the rule that forbids their disclosure, and the `@warning` on each of the three download declarations in `include/lpa_hal.h` for what a caller owes an address before it hands one over.
+**Neither value is an example a caller may provision against.** An activation code is single-use credential material that authorises a profile download, and an `SM-DS` or `SM-DP+` address identifies the operator infrastructure a device provisions against. No activation code appears in the header at all, so there is nothing to copy even in principle; the two addresses that do appear are named test endpoints — a vendor demonstration `SM-DS` and the `GSMA` test `SM-DP+` — and a production caller reaches neither. The values a deployment actually uses arrive from provisioning at run time and from the card, never by being copied out of documentation — see `Logging and debugging requirements` for the rule that forbids their disclosure, and the `@warning` on each of the three download declarations in `include/lpa_hal.h` for what a caller owes an address before it hands one over.
 
 **No `ICCID` or `EID` value is published anywhere in this documentation or in the header.** Both identify a subscriber's card and are personal data, so an example of either would be exactly the value this specification tells an implementer never to disclose. A caller or test author that needs an illustrative `ICCID` constructs one that deliberately fails the `ITU-T` Recommendation `E.118` check digit — the trailing Luhn digit — so that the value cannot be mistaken for, or provisioned as, a real card.
 
@@ -361,7 +363,7 @@ The declarations describe the *shape* of the three download arguments, and that 
 - **Initial state after download is unspecified.** The download functions install a profile; this interface does not state the value of `profileState` immediately afterwards. A caller that needs a profile enabled must call `cellular_esim_enable_profile()` explicitly rather than assume the download left it active.
 - **No predefined state model.** Earlier revisions of this document asserted a predefined model of component states with a defined set of valid transitions, and method restrictions tied to states such as `uninitialized` and `idle`. This interface defines no such model, and those states do not appear in it. What can be established from the declarations is drawn under `State Diagram`; no other transition or restriction is specified by this interface.
 
-<em>Derived from `include/lpa_hal.h` lines 234-239 (`profileState` and its two values), lines 345, 502 and 581 (the three download arguments and their schematic forms) with lines 57-69 (the interface-wide rule that every example value is schematic and that no `ICCID` or `EID` literal is published), lines 738-999 (the three `ICCID`-matched operations) and lines 1001-1087 (the module lifecycle).</em>
+<em>Derived from `include/lpa_hal.h` lines 217-222 (`profileState` and its two values), lines 354-362 (the `ActivationCodeStr` argument and the statement that its syntax is not established by this interface), lines 502-503 and 585-586 (the `SM-DS` and `SM-DP+` arguments and the single worked value each carries) with lines 58-61 (the header's own rule that nothing is presented as observed behaviour and that no plausible value is supplied where neither source establishes one), lines 743-994 (the three `ICCID`-matched operations) and lines 996-1113 (the module lifecycle).</em>
 
 ### Data Structures and Defines
 
@@ -369,8 +371,8 @@ Every public type and valued macro a caller constructs, populates or interprets 
 
 | Definition | Kind | Declared at | Represents |
 | --- | --- | --- | --- |
-| `eSIMProfileStruct` | struct | `include/lpa_hal.h:218-239` | One `eSIM` profile as reported by the card. |
-| `cellular_sim_download_progress_callback` | function pointer typedef | `include/lpa_hal.h:341` | Progress notification during an activation-code download. |
+| `eSIMProfileStruct` | struct | `include/lpa_hal.h:217-222` | One `eSIM` profile as reported by the card. |
+| `cellular_sim_download_progress_callback` | function pointer typedef | `include/lpa_hal.h:340` | Progress notification during an activation-code download. |
 | `CellularPreferredUICC_t` | enumeration | `include/lpa_hal.h:89-93` | Which `UICC` type is preferred. |
 | `CellularDeviceSimStatus_t` | enumeration | `include/lpa_hal.h:110-116` | Preparation status of a device `SIM`. |
 
@@ -390,58 +392,60 @@ The buffer sizes are the contract a caller must respect: the identifier field is
 
 | Macro | Value | Declared at |
 | --- | --- | --- |
-| `RETURN_ERROR` | `-1` | `include/lpa_hal.h:183` |
-| `RETURN_OK` | `0` | `include/lpa_hal.h:184` |
-| `TRUE` | `1` | `include/lpa_hal.h:186`, guarded by `#ifndef` |
-| `FALSE` | `0` | `include/lpa_hal.h:189`, guarded by `#ifndef` |
+| `RETURN_ERROR` | `-1` | `include/lpa_hal.h:182` |
+| `RETURN_OK` | `0` | `include/lpa_hal.h:183` |
+| `TRUE` | `1` | `include/lpa_hal.h:185`, guarded by `#ifndef` |
+| `FALSE` | `0` | `include/lpa_hal.h:188`, guarded by `#ifndef` |
 
 **The two enumerations are declared but unused.** `CellularPreferredUICC_t` (`CELLULAR_UICC_USIM` = 0, `CELLULAR_UICC_ESIM`) and `CellularDeviceSimStatus_t` (`SIM_PREPARATION_PENDING` = 1, `SIM_PREPARATION_INPROGRESS`, `SIM_PREPARATION_DOWNLOADED`, `SIM_PREPARATION_DONE`) appear in **no declared function signature** in this interface — no function takes either as a parameter, and none returns either. This document does not assert a use for them, because the interface establishes none. A caller can construct the values, but has nowhere in this interface to pass them.
 
-*Derived from `include/lpa_hal.h` lines 136-140, 161-167, 201-212, 234-239 and 338.*
+*Derived from `include/lpa_hal.h` lines 89-93 (`CellularPreferredUICC_t`) and 110-116 (`CellularDeviceSimStatus_t`), lines 182-188 (the status macros `RETURN_ERROR`, `RETURN_OK`, `TRUE` and `FALSE`), lines 217-222 (`eSIMProfileStruct`) and line 340 (`cellular_sim_download_progress_callback`).*
 
 ### API Surface
 
 This interface declares **eleven** functions, all listed below by exact identifier. Per-API detail — argument ranges, pre-conditions, every return value and what a caller should do about each — is carried by the Doxygen block on each declaration in [include/lpa_hal.h](../../include/lpa_hal.h).
 
+**Where these pointers resolve.** The locators in this topic are relative paths into `include/lpa_hal.h`, the form this documentation set uses throughout, so they resolve on GitHub and in a checkout \- the surface a developer using this repository reads. They do **not** resolve from inside the generated documentation site: the generator copies each link target verbatim into a page one directory below this file, so a site served with `docs/output/html` as its root has nothing above that root to reach and answers `404`, and opened from the filesystem the same target does not exist. Follow a source pointer on GitHub or in a checkout; inside the generated site, reach the same declaration through its `Files` and function-index pages.
+
 **Module lifecycle:**
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `cellular_esim_lpa_init` | `include/lpa_hal.h:1065` | Initializes the Local Profile Assistant, establishes modem readiness and sets up the parameters the other operations need. Mandatory before any other call. |
-| `cellular_esim_lpa_exit` | `include/lpa_hal.h:1128` | Deactivates the module and releases its resources. |
+| `cellular_esim_lpa_init` | `include/lpa_hal.h:1050` | Initializes the Local Profile Assistant, establishes modem readiness and sets up the parameters the other operations need. Mandatory before any other call. |
+| `cellular_esim_lpa_exit` | `include/lpa_hal.h:1113` | Deactivates the module and releases its resources. |
 
 **Profile download:**
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `cellular_esim_download_profile_with_activationcode` | `include/lpa_hal.h:499` | Downloads and installs a profile from an activation code, reporting progress through a caller-supplied callback. |
-| `cellular_esim_download_profile_from_smds` | `include/lpa_hal.h:582` | Downloads a profile by connecting to a specified `SM-DS` address. Reports no progress. |
-| `cellular_esim_download_profile_from_defaultsmdp` | `include/lpa_hal.h:661` | Downloads a profile from a default `SM-DP+` address. Reports no progress. |
+| `cellular_esim_download_profile_with_activationcode` | `include/lpa_hal.h:489` | Downloads and installs a profile from an activation code, reporting progress through a caller-supplied callback. |
+| `cellular_esim_download_profile_from_smds` | `include/lpa_hal.h:572` | Downloads a profile by connecting to a specified `SM-DS` address. Reports no progress. |
+| `cellular_esim_download_profile_from_defaultsmdp` | `include/lpa_hal.h:651` | Downloads a profile from a default `SM-DP+` address. Reports no progress. |
 
 **Profile lifecycle:**
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `cellular_esim_enable_profile` | `include/lpa_hal.h:833` | Activates the profile whose `ICCID` matches the one supplied. |
-| `cellular_esim_disable_profile` | `include/lpa_hal.h:915` | Deactivates the profile whose `ICCID` matches the one supplied. |
-| `cellular_esim_delete_profile` | `include/lpa_hal.h:1004` | Permanently removes the profile whose `ICCID` matches the one supplied. |
+| `cellular_esim_enable_profile` | `include/lpa_hal.h:823` | Activates the profile whose `ICCID` matches the one supplied. |
+| `cellular_esim_disable_profile` | `include/lpa_hal.h:905` | Deactivates the profile whose `ICCID` matches the one supplied. |
+| `cellular_esim_delete_profile` | `include/lpa_hal.h:994` | Permanently removes the profile whose `ICCID` matches the one supplied. |
 
 **Profile inspection:**
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `cellular_esim_get_profile_info` | `include/lpa_hal.h:751` | Retrieves the `MNO` profiles present on the card as a callee-allocated, caller-freed array, with a count. |
+| `cellular_esim_get_profile_info` | `include/lpa_hal.h:741` | Retrieves the `MNO` profiles present on the card as a callee-allocated, caller-freed array, with a count. |
 
 `eUICC` **and `EID` information:**
 
 | API | Declared at | Purpose |
 | --- | --- | --- |
-| `cellular_esim_get_eid` | `include/lpa_hal.h:1186` | Retrieves the `EID` of the device's `eSIM`. |
-| `cellular_esim_get_euicc` | `include/lpa_hal.h:1244` | Retrieves information about the `eUICC`. |
+| `cellular_esim_get_eid` | `include/lpa_hal.h:1171` | Retrieves the `EID` of the device's `eSIM`. |
+| `cellular_esim_get_euicc` | `include/lpa_hal.h:1229` | Retrieves information about the `eUICC`. |
 
 **A gap in the last two, stated because it decides whether they are usable.** `cellular_esim_get_eid()` and `cellular_esim_get_euicc()` are each declared with an **empty parameter list** and an `int` return documented as a status code. They therefore declare **no out-parameter and no output buffer**, so this interface does not establish how the retrieved `EID` or `eUICC` information reaches the caller. A caller cannot determine from this interface where to read the result, and a test cannot assert on a value the interface gives it no way to obtain. Note also that an empty parameter list is not the same declaration as the explicit `(void)` used by `cellular_esim_lpa_init()` and `cellular_esim_lpa_exit()`.
 
-*Derived from [include/lpa_hal.h](../../include/lpa_hal.h) lines 495, 574, 653, 736, 823, 907, 999, 1039, 1087, 1142 and 1195 — the complete set of declarations in the header.*
+*Derived from [include/lpa_hal.h](../../include/lpa_hal.h) lines 489, 572, 651, 741, 823, 905, 994, 1050, 1113, 1171 and 1229 — the complete set of declarations in the header.*
 
 ### Sequence Diagram
 
@@ -502,7 +506,9 @@ sequenceDiagram
 
 The three download calls are shown one after another only to name all three in one place; they are alternative paths, and a caller uses whichever its deployment provides. The three profile lifecycle calls are shown consecutively for the same reason, and the order they appear in is **not** a requirement: this interface does not state that a profile must be enabled before it can be disabled, or disabled before it can be deleted, and `State Diagram` records that gap in full. What this diagram does establish is the one ordering constraint the specification states — `cellular_esim_lpa_init()` first and `cellular_esim_lpa_exit()` last — together with the dependency that a caller obtains an `ICCID` from `cellular_esim_get_profile_info()` before it can address a profile by one. The `TRUE` return on the activation-code path is not a typographical inconsistency with the `RETURN_OK` returns around it — it is the divergent convention that declaration documents, and the hazard it creates is set out under `Internal Error Handling`.
 
-*Derived from `include/lpa_hal.h`, lines 495-1195 for the call set and the `@pre` statements at lines 399, 518, 597, 677, 766, 850, 934, 1011, 1046, 1094 and 1149 for the ordering.*
+*Derived from `include/lpa_hal.h`, lines 342-1229 for the call set and the `@pre` statements at lines 406, 522, 604, 691, 781, 864, 948, 1013, 1069, 1123 and 1184 for the ordering.*
+
+Every diagram in this document is a fenced `mermaid` block. Such blocks render as diagrams on GitHub, which the repository's `README.md` symlink makes the primary reading surface for this specification; they do **not** render in the `HTML` the documentation generator produces, where the block appears as its source text instead. That limitation is stated here rather than worked around, because the only available workaround would fix the generated site at the cost of the surface most readers use.
 
 ### State Diagram
 
@@ -528,7 +534,7 @@ stateDiagram-v2
 - **No declaration constrains the value a profile holds when it is called.** The `@pre` on all three lifecycle operations is that the module is initialized and that a profile with the supplied `ICCID` is installed. Not one of them names `profileState` as a precondition, so an edge from `enabled` to `disabled` would assert a predecessor requirement the interface does not impose, and would equally imply that the same call from `disabled` is not defined — which the interface does not say either.
 - **No declaration names the state a download produces.** The three download declarations report their outcome as *initiated*, as *downloaded, ready for installation* and as *downloaded successfully*; none of the three mentions `profileState`. The previous revision of this topic bridged that gap with an invented intermediate `ProfileInstalled` state and three edges into it. That state does not exist in this interface, and neither do the edges.
 - **Deletion does not lead to a state.** After a successful delete the profile is gone from the inventory, so there is nothing for an edge to point at; drawing one back to a module-level state would misrepresent a removal as a transition.
-- **Module bring-up and tear-down are not states of anything this interface reports.** `cellular_esim_lpa_init()` and `cellular_esim_lpa_exit()` change whether the module is usable, not the value of `profileState`, and **this interface declares no operation by which a caller can read the module's condition back** — there is no query, no status getter and no handle. An unobservable condition cannot be a reported state, so `LpaUninitialized` and `LpaInitialized`, which the previous revision drew, are removed rather than relabelled. Nor can an edge be drawn from either call to a `profileState` value, because **this interface does not state what becomes of installed profiles across tear-down, process exit or a restart** — see `Persistence Model` — so there is neither a preserved value to point at nor a discarded one.
+- **Module bring-up and tear-down are not states of anything this interface reports.** `cellular_esim_lpa_init()` and `cellular_esim_lpa_exit()` change whether the module is usable, not the value of `profileState`, and **this interface declares no operation by which a caller can read the module's condition back** — there is no query, no status getter and no handle. An unobservable condition cannot be a reported state, so `LpaUninitialized` and `LpaInitialized`, which the previous revision drew, are removed rather than relabelled. Nor can an edge be drawn from either call to a `profileState` value, and here the reason is the opposite of silence: **this interface states that tear-down leaves installed profiles unchanged** — see `Persistence Model` — so `cellular_esim_lpa_exit()` moves no profile between the two documented values. A call that is documented to change nothing is not a transition, so there is no edge to draw rather than an edge whose destination is unknown.
 
 **Ordering, stated with its authority, and its limit.** `cellular_esim_lpa_init()` is required before any other function in this interface. That requirement is this repository's own specification rather than the header's — the previous revision of this page states it in exactly those terms, and `include/lpa_hal.h` does not — and it is recorded under `Initialization and Startup` and `Method Sequencing` as a call-ordering rule. It is deliberately **not** drawn here as a transition, for the reason in the last bullet above. **What happens when an operation is attempted before initialization is not specified by anything in this repository**: no declaration states an error for it, `RETURN_ERROR` documents no such cause, and neither the header nor the previous specification revision describes the behaviour. A caller must not attempt it and must not assume it would be diagnosed; a test must not assert a particular outcome for it.
 
@@ -541,4 +547,4 @@ Two further things are deliberately **not** drawn, for the same reason:
 
 This interface specifies no transitions and no state-dependent restrictions at all, and nothing above should be read as supplying one.
 
-*Derived from `include/lpa_hal.h` line 237 (the meanings documented for `profileState` `0` and `1`, unchanged in substance from the interface's own baseline comment "Profile state: 00 (disabled), 01 (enabled)", which likewise assigns two meanings without closing the domain), lines 768-775, 852-860 and 939-947 (the `@post` effects of enable, disable and delete), lines 766, 850 and 934 (their `@pre` statements, none of which names `profileState`), lines 495, 574 and 653 with their `@post` blocks (the three download paths, none of which names a resulting `profileState`), and lines 1002-1039 and 1042-1087 (module bring-up and tear-down, and the absence of any operation that reports the module's condition). The call-ordering requirement is derived from this repository's previous specification revision, which states that `cellular_esim_lpa_init()` "is mandatory and must be called before any other functions"; the behaviour of a call made before it is derived from nothing, because nothing in this repository states it.*
+*Derived from `include/lpa_hal.h` line 220 (the meanings documented for `profileState` `0` and `1`, unchanged in substance from the interface's own baseline comment "Profile state: 00 (disabled), 01 (enabled)", which likewise assigns two meanings without closing the domain), lines 786-792, 868-874 and 952-959 (the `@post` effects of enable, disable and delete), lines 781-785, 864-867 and 948-951 (their `@pre` statements, none of which names `profileState`), lines 489, 572 and 651 with their `@post` blocks (the three download paths, none of which names a resulting `profileState`), and lines 996-1050 and 1052-1113 (module bring-up and tear-down, and the absence of any operation that reports the module's condition) with lines 1061-1064 and 1077-1078 in particular, which state that tear-down leaves installed profiles unchanged and is therefore documented to move no profile between the two values. The call-ordering requirement is derived from this repository's previous specification revision, which states that `cellular_esim_lpa_init()` "is mandatory and must be called before any other functions"; the behaviour of a call made before it is derived from nothing, because nothing in this repository states it.*
