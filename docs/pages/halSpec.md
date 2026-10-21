@@ -35,9 +35,9 @@ The diagram below shows where the LPA HAL sits in the software stack.
 
 ```mermaid
 flowchart TD
-    Caller["RDK-B Middleware"] <--> HAL["LPA HAL (lpa_hal.h)"]
-    HAL <--> Vendor["Vendor Software (libesim_lpa.so)"]
-    Vendor <--> Hardware["Modem and eUICC Hardware"]
+    Caller["RDK-B Middleware"] <--> HAL["LPA HAL - lpa_hal.h"]
+    HAL <--> Vendor["Vendor Software"]
+    Vendor <--> Hardware["Modem and eUICC hardware"]
 ```
 
 No dedicated `RDK-B` middleware service owns this interface. The caller, shown as RDK-B Middleware, is whichever `RDK-B` component needs `eSIM` management, and it links the vendor library directly.
@@ -47,7 +47,7 @@ The interface covers five areas:
 - **Profile download** \- installing a profile onto the `eUICC`, from an activation code, from an `SM-DS` address, or from a default `SM-DP+` address.
 - **Profile lifecycle** \- enabling, disabling and permanently deleting an installed profile, each selected by its `ICCID`.
 - **Profile inspection** \- enumerating the `MNO` profiles present on the `eUICC` with their `ICCID`, state and name.
-- `eUICC` identity \- reading the `EID` and the `eUICC` information.
+- **Card identity** \- reading the `EID` and the `eUICC` information.
 - **Module lifecycle** \- bringing the Local Profile Assistant up and tearing it down.
 
 ## Optional Components
@@ -89,7 +89,7 @@ The caller owns every buffer it passes into this interface, and the only memory 
 #### Caller Responsibilities
 
 - **Free the profile array.** Release the array `cellular_esim_get_profile_info()` returns once that call has returned `RETURN_OK`, and before calling `cellular_esim_lpa_exit()`. After a failed call the output is undefined and is neither read nor freed.
-- **Keep passed buffers valid.** Keep every buffer passed into a call allocated and unmodified for the duration of the call, and beyond it until the vendor has confirmed that the implementation does not retain the pointer; without that confirmation, hold the buffer until `cellular_esim_lpa_exit()` has returned.
+- **Keep passed buffers valid.** Keep every buffer passed into a call allocated and unmodified during the call and afterwards, until the vendor confirms that the implementation has finished with it or `cellular_esim_lpa_exit()` has returned `RETURN_OK`. A tear-down that returns `RETURN_ERROR` may leave resources held, so the buffers stay allocated and unmodified after it until one of those conditions is met.
 - **Zero-terminate every string.** All strings passed across this interface must be zero-terminated, so that string functions can determine their length and buffer manipulation cannot overrun.
 
 #### Module Responsibilities
@@ -133,9 +133,8 @@ Two of those messages embed values that vary at run time — the pending notific
 ### Blocking calls
 
 - **Synchronous and responsive.** Every function returns its outcome directly as a status and is expected to complete within a time commensurate with the complexity of the operation requested.
-- **Non-blocking requirement.** These APIs are called from a single-threaded context per caller, so an implementation must not block or suspend the calling thread: it avoids long-running work there, or performs that work asynchronously internally.
 - **Network-facing downloads.** The three download functions contact a remote `SM-DP+` or `SM-DS` server, so their duration includes a network round trip.
-- **Bring-up exception.** Where the `eUICC` or the modem is not yet available, `cellular_esim_lpa_init()` waits until the hardware becomes available. A caller therefore does not depend on it returning promptly at bring-up, and imposes and enforces its own bound where one is required.
+- **Caller-imposed bounds.** A caller makes each call where a delay is tolerable — `cellular_esim_lpa_init()` at bring-up and the three downloads in particular — and imposes and enforces its own bound where one is required.
 - **Progress callback.** A callback body runs while the activation-code download is in progress, so it returns promptly and defers lengthy work to the caller's own context.
 
 ### Internal Error Handling
@@ -200,7 +199,7 @@ Both the HAL implementation and any software interacting with it must prioritize
 
 Any change to a file listed under `Source References` obliges a review of this document. The responsible reviewer is the owner named in this repository's `.github/CODEOWNERS`, `@rdkcentral/rdkb-hal-advisory`.
 
-This HAL is not available on the HUB6 or XER10 reference platforms, so the runtime behavior this document states rests on the interface definition and has not been exercised on reference hardware.
+This HAL is not available on the HUB6 or XER10 reference platforms, so the runtime behavior this document states has not been exercised on reference hardware.
 
 ### Licensing
 
@@ -310,7 +309,7 @@ This interface declares **eleven** functions, all listed below by exact identifi
 | --- | --- |
 | `cellular_esim_get_profile_info` | Retrieves the `MNO` profiles present on the card as a callee-allocated, caller-freed array, with a count. |
 
-`eUICC` **and `EID` information:**
+**Card identity:**
 
 | API | Purpose |
 | --- | --- |
@@ -380,12 +379,19 @@ The three download calls are alternative paths, and the three profile lifecycle 
 
 ### State Diagram
 
-`eSIMProfileStruct.profileState` is the only state any declaration reports. The interface documents its two values and the effect of each successful lifecycle call, but no transitions between the values, so the diagram shows the two documented states without edges.
+`eSIMProfileStruct.profileState` is the only state any declaration reports. The diagram shows the profile lifecycle: a download installs a profile on the `eUICC`, `cellular_esim_enable_profile()` and `cellular_esim_disable_profile()` move it between the two `profileState` values, and `cellular_esim_delete_profile()` removes it. Each edge is a step of that lifecycle, and the table below gives the documented effect of each successful call. A download ends at the installed state rather than at either value; `State-Dependent Behavior` gives what a caller does next.
 
 ```mermaid
 stateDiagram-v2
-    state "profileState = 0 (disabled)" as Disabled
-    state "profileState = 1 (enabled)" as Enabled
+    direction LR
+    state "Installed on the eUICC" as Installed {
+        state "profileState = 0 (disabled)" as Disabled
+        state "profileState = 1 (enabled)" as Enabled
+        Disabled --> Enabled : cellular_esim_enable_profile()
+        Enabled --> Disabled : cellular_esim_disable_profile()
+    }
+    [*] --> Installed : download (any of three paths)
+    Installed --> [*] : cellular_esim_delete_profile()
 ```
 
 | Operation | Documented effect of success |
@@ -395,7 +401,7 @@ stateDiagram-v2
 | `cellular_esim_delete_profile` | The profile is removed from the card permanently and no longer appears in `cellular_esim_get_profile_info()`. |
 | the three download functions | A profile has been downloaded or its download initiated; the profile inventory confirms what is on the card. |
 
-A caller relies on the meanings of `0` and `1` and on the documented effect of each successful call. It treats any other value as an unknown state, re-reading the inventory rather than mapping the value onto enabled or disabled or acting on it. `cellular_esim_lpa_init()` and `cellular_esim_lpa_exit()` change whether the module is usable, not the value of `profileState`; tear-down leaves installed profiles unchanged (see `Persistence Model`).
+A caller treats any `profileState` value other than `0` or `1` as an unknown state, re-reading the inventory rather than mapping the value onto enabled or disabled or acting on it. `cellular_esim_lpa_init()` and `cellular_esim_lpa_exit()` change whether the module is usable, not the value of `profileState`; tear-down leaves installed profiles unchanged (see `Persistence Model`).
 
 `CellularDeviceSimStatus_t` (see `Data Structures and Defines`) and the download progress messages (see `Asynchronous Notification Model`) are not profile states and are not drawn.
 
@@ -404,5 +410,7 @@ A caller relies on the meanings of `0` and `1` and on the documented effect of e
 - [rdkcentral/rdkb-halif-lpa/include/lpa_hal.h](https://github.com/rdkcentral/rdkb-halif-lpa/blob/develop/include/lpa_hal.h) — interface header: declarations, types, status codes and per-API documentation
 - [rdkcentral/rdkb-halif-lpa/CHANGELOG.md](https://github.com/rdkcentral/rdkb-halif-lpa/blob/develop/CHANGELOG.md) — release history behind `Version History`
 - [rdkcentral/rdkb-halif-lpa/LICENSE](https://github.com/rdkcentral/rdkb-halif-lpa/blob/develop/LICENSE) — Apache License 2.0 text
+- [rdkcentral/rdkb-halif-lpa/NOTICE](https://github.com/rdkcentral/rdkb-halif-lpa/blob/develop/NOTICE) — attribution notice
+- [rdkcentral/rdkb-halif-lpa/COPYING](https://github.com/rdkcentral/rdkb-halif-lpa/blob/develop/COPYING) — Apache License 2.0 text, a symbolic link to `LICENSE`
 - [rdkcentral/rdkb-halif-lpa/.github/CODEOWNERS](https://github.com/rdkcentral/rdkb-halif-lpa/blob/develop/.github/CODEOWNERS) — responsible reviewer named under `Quality Control`
 
