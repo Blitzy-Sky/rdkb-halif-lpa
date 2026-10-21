@@ -25,11 +25,10 @@
 - `SM-DS` \- Subscription Manager Discovery Service
 - `SM-DP+` \- Subscription Manager Data Preparation, the server that delivers a prepared profile
 - `ITU-T` \- International Telecommunication Union, Telecommunication Standardization Sector
-- `SLA` \- Service Level Agreement
 
 ## Description
 
-The `LPA` (Local Profile Assistant) `HAL` is the `RDK-B` interface for `eSIM` **profile management on an `eUICC`**. It abstracts a vendor's Local Profile Assistant implementation so that `RDK-B` software can download, activate, deactivate, remove and enumerate `MNO` profiles, and read the identity of the `eUICC` itself, without depending on a particular modem, `eUICC` or `OEM` implementation.
+The `LPA` (Local Profile Assistant) HAL is the `RDK-B` interface for `eSIM` **profile management on an `eUICC`**. It abstracts a vendor's Local Profile Assistant implementation so that `RDK-B` software can download, activate, deactivate, remove and enumerate `MNO` profiles, and read the identity of the `eUICC` itself, without depending on a particular modem, `eUICC` or `OEM` implementation.
 
 The diagram below shows where the LPA HAL sits in the software stack.
 
@@ -44,11 +43,11 @@ No dedicated `RDK-B` middleware service owns this interface. The caller, shown a
 
 The interface covers five areas:
 
-- **Profile download** \- installing a profile onto the `eUICC`, from an activation code, from an `SM-DS` address, or from a default `SM-DP+` address.
-- **Profile lifecycle** \- enabling, disabling and permanently deleting an installed profile, each selected by its `ICCID`.
-- **Profile inspection** \- enumerating the `MNO` profiles present on the `eUICC` with their `ICCID`, state and name.
-- **Card identity** \- reading the `EID` and the `eUICC` information.
-- **Module lifecycle** \- bringing the Local Profile Assistant up and tearing it down.
+- **Profile download:** installing a profile onto the `eUICC`, from an activation code, from an `SM-DS` address, or from a default `SM-DP+` address.
+- **Profile lifecycle:** enabling, disabling and permanently deleting an installed profile, each selected by its `ICCID`.
+- **Profile inspection:** enumerating the `MNO` profiles present on the `eUICC` with their `ICCID`, state and name.
+- **Card identity:** reading the `EID` and the `eUICC` information.
+- **Module lifecycle:** bringing the Local Profile Assistant up and tearing it down.
 
 ## Optional Components
 
@@ -88,9 +87,9 @@ The caller owns every buffer it passes into this interface, and the only memory 
 
 #### Caller Responsibilities
 
-- **Free the profile array.** Release the array `cellular_esim_get_profile_info()` returns once that call has returned `RETURN_OK`, and before calling `cellular_esim_lpa_exit()`. After a failed call the output is undefined and is neither read nor freed.
-- **Keep passed buffers valid.** Keep every buffer passed into a call allocated and unmodified during the call and afterwards, until the vendor confirms that the implementation has finished with it or `cellular_esim_lpa_exit()` has returned `RETURN_OK`. A tear-down that returns `RETURN_ERROR` may leave resources held, so the buffers stay allocated and unmodified after it until one of those conditions is met.
-- **Zero-terminate every string.** All strings passed across this interface must be zero-terminated, so that string functions can determine their length and buffer manipulation cannot overrun.
+- **Free the profile array:** Release the array `cellular_esim_get_profile_info()` returns once that call has returned `RETURN_OK`, and before calling `cellular_esim_lpa_exit()`. After a failed call the output is undefined and is neither read nor freed.
+- **Keep passed buffers valid:** Keep every buffer passed into a call allocated and unmodified during the call and afterwards, until the vendor confirms that the implementation has finished with it or `cellular_esim_lpa_exit()` has returned `RETURN_OK`. A tear-down that returns `RETURN_ERROR` may leave resources held, so the buffers stay allocated and unmodified after it until one of those conditions is met.
+- **Zero-terminate every string:** All strings passed across this interface must be zero-terminated, so that string functions can determine their length and buffer manipulation cannot overrun.
 
 #### Module Responsibilities
 
@@ -105,10 +104,10 @@ The LPA HAL is not involved in any power management operation. It neither partic
 
 This interface provides **exactly one** asynchronous channel: `cellular_sim_download_progress_callback`, declared as `int (*)(char *progress)` and installed as the second argument of `cellular_esim_download_profile_with_activationcode()`.
 
-- **Installed per call.** There is no registration or deregistration API. The callback's scope is the download it was passed to, so a caller cannot install a standing notification handler and has nothing to unregister.
-- **Activation-code path only.** `cellular_esim_download_profile_from_smds()` and `cellular_esim_download_profile_from_defaultsmdp()` take no callback argument and report no progress to the caller.
-- **The callback returns a status.** It returns `RETURN_OK` when it accepts a message and an error otherwise. A caller does not use an error return to cancel a download.
-- **Delivery context.** See `Threading Model`.
+- **Installed per call:** There is no registration or deregistration API. The callback's scope is the download it was passed to, so a caller cannot install a standing notification handler and has nothing to unregister.
+- **Activation-code path only:** `cellular_esim_download_profile_from_smds()` and `cellular_esim_download_profile_from_defaultsmdp()` take no callback argument and report no progress to the caller.
+- **The callback returns a status:** It returns `RETURN_OK` when it accepts a message and an error otherwise. A caller does not use an error return to cancel a download.
+- **Delivery context:** See `Threading Model`.
 
 The `progress` argument carries one of the following status messages:
 
@@ -132,16 +131,16 @@ Two of those messages embed values that vary at run time — the pending notific
 
 ### Blocking calls
 
-- **Synchronous and responsive.** Every function returns its outcome directly as a status and is expected to complete within a time commensurate with the complexity of the operation requested.
-- **Network-facing downloads.** The three download functions contact a remote `SM-DP+` or `SM-DS` server, so their duration includes a network round trip.
-- **Caller-imposed bounds.** A caller makes each call where a delay is tolerable — `cellular_esim_lpa_init()` at bring-up and the three downloads in particular — and imposes and enforces its own bound where one is required.
-- **Progress callback.** A callback body runs while the activation-code download is in progress, so it returns promptly and defers lengthy work to the caller's own context.
+- **Synchronous and Responsive:** Every function returns its outcome directly as a status and is expected to complete within a time commensurate with the complexity of the operation requested.
+- **Network-facing downloads:** The three download functions contact a remote `SM-DP+` or `SM-DS` server, so their duration includes a network round trip.
+- **Caller-imposed bounds:** A caller makes each call where a delay is tolerable — `cellular_esim_lpa_init()` at bring-up and the three downloads in particular — and imposes and enforces its own bound where one is required.
+- **Progress callback:** A callback body runs while the activation-code download is in progress, so it returns promptly and defers lengthy work to the caller's own context.
 
 ### Internal Error Handling
 
-- **Synchronous error handling.** Every function in this interface returns `int` and reports failure through that return value, so a caller learns of an error immediately at the call site.
-- **Internal error reporting.** The HAL is responsible for reporting internal system errors, such as an out-of-memory condition, through the return value.
-- **Logging for errors.** For system errors an implementation also logs enough detail to make the cause identifiable without reproducing the failure. See `Logging and debugging requirements`.
+- **Synchronous Error Handling:** Every function in this interface returns `int` and reports failure through that return value, so a caller learns of an error immediately at the call site.
+- **Internal Error Reporting:** The HAL is responsible for reporting internal system errors, such as an out-of-memory condition, through the return value.
+- **Focus on Logging for Errors:** For system errors an implementation also logs enough detail to make the cause identifiable without reproducing the failure. See `Logging and debugging requirements`.
 
 | Macro | Value | Meaning |
 | --- | --- | --- |
@@ -152,8 +151,8 @@ Two of those messages embed values that vary at run time — the pending notific
 
 Caller code compares against `RETURN_ERROR`; the spelling `RETURN_ERR` is not defined by this interface and does not compile.
 
-- **The activation-code download uses a different convention, and the collision is silent.** Because `FALSE` and `RETURN_OK` are both `0`, **a caller that tests the result of `cellular_esim_download_profile_with_activationcode()` against `RETURN_OK` reads a documented failure as a success.** A caller treats a non-zero result from that function as success only once it has confirmed the convention with its vendor, and does not reuse the comparison that is correct for the other ten functions.
-- **The status code is the only failure information.** `lpaGetErrorCodeDescription` and `lpaGetErrorCode` are not declared by this interface, so code written against them does not link.
+- **The activation-code download uses a different convention, and the collision is silent:** Because `FALSE` and `RETURN_OK` are both `0`, **a caller that tests the result of `cellular_esim_download_profile_with_activationcode()` against `RETURN_OK` reads a documented failure as a success**. A caller treats a non-zero result from that function as success only once it has confirmed the convention with its vendor, and does not reuse the comparison that is correct for the other ten functions.
+- The status code is the only failure information.
 
 ### Persistence Model
 
@@ -171,17 +170,7 @@ The LPA HAL component is required to record all errors and critical informative 
 
 All HAL components must adhere to a consistent logging process. When logging is necessary it should be written to the `lpa_vendor_hal.log` file, located in either the `/var/tmp/` or the `/rdklogs/logs/` directory.
 
-Logs must be categorized according to the following log levels, as defined by the Linux standard logging system, listed here in descending order of severity:
-
-- **FATAL:** Critical conditions, typically indicating system crashes or severe failures that require immediate attention.
-- **ERROR:** Non-fatal error conditions that nonetheless significantly impede normal operation.
-- **WARNING:** Potentially harmful situations that do not yet represent errors.
-- **NOTICE:** Important but not error-level events.
-- **INFO:** General informational messages that highlight system operations.
-- **DEBUG:** Detailed information typically useful only when diagnosing problems.
-- **TRACE:** Very fine-grained logging to trace the internal flow of the system.
-
-Each log entry should include a timestamp, the log level and a message describing the event or condition. This standard format makes log files parseable and comparable across different vendors and components.
+Log levels follow the Linux standard logging system, in descending order of severity: `FATAL`, `ERROR`, `WARNING`, `NOTICE`, `INFO`, `DEBUG` and `TRACE`. Each log entry carries a timestamp, the log level and a message describing the event or condition.
 
 Implementations must not log credentials, secrets, security-sensitive information, or other sensitive data.
 
@@ -193,17 +182,15 @@ An implementation should not contribute disproportionately to memory or CPU util
 
 ### Quality Control
 
-To ensure the highest quality and reliability, it is strongly recommended that third-party quality assurance tools such as `Coverity`, `Black Duck` and `Valgrind` be employed to analyze the implementation, so that memory leaks, memory corruption and similar defects are detected and resolved before deployment.
+An implementation should pass analysis with third-party tools such as `Coverity`, `Black Duck` and `Valgrind` without reported issues. Neither the HAL implementation nor the vendor software beneath it may introduce memory leaks or memory corruption.
 
-Both the HAL implementation and any software interacting with it must prioritize robust memory management: careful allocation, matching deallocation and explicit error handling, following the ownership rules under `Memory Model`.
+This HAL is not available on the HUB6 or XER10 reference platforms, so the runtime behaviour this document describes has not been observed on reference hardware.
 
-Any change to a file listed under `Source References` obliges a review of this document. The responsible reviewer is the owner named in this repository's `.github/CODEOWNERS`, `@rdkcentral/rdkb-hal-advisory`.
-
-This HAL is not available on the HUB6 or XER10 reference platforms, so the runtime behavior this document states has not been exercised on reference hardware.
+Any change to a file listed under `Source References` obliges a review of this document by the repository's code owner, `@rdkcentral/rdkb-hal-advisory`.
 
 ### Licensing
 
-The LPA HAL implementation is expected to be released under the Apache License 2.0. The interface header carries that license notice, and the full text is available at the repository root as `LICENSE`, with `COPYING` and `NOTICE` alongside it.
+The interface definition is licensed under the Apache License 2.0, with the full text in `LICENSE` and the attribution notice in `NOTICE`. An implementation of this interface is expected to be released under the Apache License 2.0.
 
 ### Build Requirements
 
@@ -211,13 +198,13 @@ The source code should be capable of, but not limited to, building under the Yoc
 
 ### Variability Management
 
-Changes to the interface are controlled by versioning. Vendors are expected to implement against a fixed version of the interface and, as `SLA` terms require, to move to later versions as demand dictates. Each API interface is versioned using [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html), and vendor code complies with a specific version of the interface.
+Changes to the interface are controlled by versioning. Vendors implement a designated version of the interface and move to later versions as their service agreements require. Each interface version follows [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html), and vendor code complies with a specific version.
 
-This interface has no compile-time variability (see `Optional Components`), and `include/lpa_hal.h` defines no interface version macro, so a caller cannot select an interface revision at compile time or at run time. The release tag is the only version identity.
+The interface version is identified by the repository's release tag.
 
 ### Platform or Product Customization
 
-This interface defines no platform or product customization surface — no vendor extension point, product-specific macro or configuration file — so the same eleven declarations are presented to every caller on every platform. Product-specific behavior is confined to the vendor implementation behind the interface.
+Product-specific behaviour is confined to the vendor implementation behind the interface.
 
 ## Interface API Documentation
 
@@ -232,24 +219,24 @@ The interface has one central concept: the `eSIM` profile, an operator subscript
 
 #### Object Lifecycles
 
-- **The profile.** A profile is created on the card by one of the three download functions, enumerated by `cellular_esim_get_profile_info()`, activated and deactivated by `cellular_esim_enable_profile()` and `cellular_esim_disable_profile()`, and permanently removed by `cellular_esim_delete_profile()`. Its `ICCID` is the only handle this interface offers for it.
-- **The profile record.** `cellular_esim_get_profile_info()` returns a caller-owned array of `eSIMProfileStruct` describing the profiles found, together with a count. The array is a snapshot, so a caller that has enabled, disabled or deleted a profile, or brought the module up again, re-reads rather than reuses it.
-- **The module.** `cellular_esim_lpa_init()` brings the Local Profile Assistant up and `cellular_esim_lpa_exit()` tears it down. Neither returns a handle or a context, so the module state is implicit and at most one instance of it is addressable through this interface.
+- **The profile:** A profile is created on the card by one of the three download functions, enumerated by `cellular_esim_get_profile_info()`, activated and deactivated by `cellular_esim_enable_profile()` and `cellular_esim_disable_profile()`, and permanently removed by `cellular_esim_delete_profile()`. Its `ICCID` is the only handle this interface offers for it.
+- **The profile record:** `cellular_esim_get_profile_info()` returns a caller-owned array of `eSIMProfileStruct` describing the profiles found, together with a count. The array is a snapshot, so a caller that has enabled, disabled or deleted a profile, or brought the module up again, re-reads rather than reuses it.
+- **The module:** `cellular_esim_lpa_init()` brings the Local Profile Assistant up and `cellular_esim_lpa_exit()` tears it down. Neither returns a handle or a context, so the module state is implicit and at most one instance of it is addressable through this interface.
 
 #### Method Sequencing
 
 - `cellular_esim_lpa_init()` **comes first**, before any other function in this interface, including `cellular_esim_get_eid()` and `cellular_esim_get_euicc()`.
-- **Download before lifecycle.** A profile must have been downloaded, or already be present on the card, before `cellular_esim_enable_profile()`, `cellular_esim_disable_profile()` or `cellular_esim_delete_profile()` can succeed.
-- **Inspect to obtain an `ICCID`.** `cellular_esim_get_profile_info()` is how a caller discovers the `ICCID` values it may pass to those three calls.
+- **Download before lifecycle:** A profile must have been downloaded, or already be present on the card, before `cellular_esim_enable_profile()`, `cellular_esim_disable_profile()` or `cellular_esim_delete_profile()` can succeed.
+- **Inspect to obtain an `ICCID`:** `cellular_esim_get_profile_info()` is how a caller discovers the `ICCID` values it may pass to those three calls.
 - `cellular_esim_lpa_exit()` **comes last**, before shutdown or once the functionality is no longer required.
 
-**Download arguments.** The syntax of an activation code is fixed by the issuing party or the vendor implementation. The header illustrates the other two arguments with test endpoints rather than live operator infrastructure: an `SM-DS` address such as `oem-smds-json.demo.gemalto.com` and an `SM-DP+` address such as `smdp-plus.test.gsma.com`. The values a deployment uses arrive from provisioning at run time.
+**Download arguments:** The syntax of an activation code is fixed by the issuing party or the vendor implementation. The header illustrates the other two arguments with test endpoints rather than live operator infrastructure: an `SM-DS` address such as `oem-smds-json.demo.gemalto.com` and an `SM-DP+` address such as `smdp-plus.test.gsma.com`. The values a deployment uses arrive from provisioning at run time.
 
 #### State-Dependent Behavior
 
-- **Profile state.** The only state this interface exposes is `eSIMProfileStruct.profileState`; `State Diagram` gives its values and the effect of each lifecycle call on it.
-- **Outcome depends on the card's contents.** All three lifecycle calls verify the supplied `ICCID` against the profiles stored on the card and fail when there is no match, so their outcome depends on what is installed rather than on a mode the interface exposes.
-- **After download.** A caller that needs a newly downloaded profile enabled calls `cellular_esim_enable_profile()` explicitly rather than assuming the download left it active.
+- **Profile state:** The only state this interface exposes is `eSIMProfileStruct.profileState`; `State Diagram` gives its values and the effect of each lifecycle call on it.
+- **Outcome depends on the card's contents:** All three lifecycle calls verify the supplied `ICCID` against the profiles stored on the card and fail when there is no match, so their outcome depends on what is installed rather than on a mode the interface exposes.
+- **After download:** A caller that needs a newly downloaded profile enabled calls `cellular_esim_enable_profile()` explicitly rather than assuming the download left it active.
 
 ### Data Structures and Defines
 
@@ -272,9 +259,9 @@ The header organizes its public types and functions under the Doxygen groups `lp
 
 The buffer sizes are the contract a caller must respect: a caller takes the `ICCID` length from the 20-digit contract rather than from the field size, and an operator name longer than the 16-byte field, terminator included, cannot be represented.
 
-**Status macros.** `RETURN_ERROR` (`-1`), `RETURN_OK` (`0`), `TRUE` (`1`) and `FALSE` (`0`) are the values the functions return; `Internal Error Handling` gives the meaning of each. `TRUE` and `FALSE` are each defined only where the including translation unit has not already defined them.
+**Status macros:** `RETURN_ERROR` (`-1`), `RETURN_OK` (`0`), `TRUE` (`1`) and `FALSE` (`0`) are the values the functions return; `Internal Error Handling` gives the meaning of each. `TRUE` and `FALSE` are each defined only where the including translation unit has not already defined them.
 
-**The two enumerations are not used by any function.** `CellularPreferredUICC_t` (`CELLULAR_UICC_USIM` = 0, `CELLULAR_UICC_ESIM`) and `CellularDeviceSimStatus_t` (`SIM_PREPARATION_PENDING` = 1, `SIM_PREPARATION_INPROGRESS`, `SIM_PREPARATION_DOWNLOADED`, `SIM_PREPARATION_DONE`) appear in no declared function signature, so a caller can construct their values but has nowhere in this interface to pass them.
+**The two enumerations are not used by any function:** `CellularPreferredUICC_t` (`CELLULAR_UICC_USIM` = 0, `CELLULAR_UICC_ESIM`) and `CellularDeviceSimStatus_t` (`SIM_PREPARATION_PENDING` = 1, `SIM_PREPARATION_INPROGRESS`, `SIM_PREPARATION_DOWNLOADED`, `SIM_PREPARATION_DONE`) appear in no declared function signature, so a caller can construct their values but has nowhere in this interface to pass them.
 
 ### API Surface
 
