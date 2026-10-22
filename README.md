@@ -1,1 +1,1 @@
-docs/pages/LpaHalSpec.md
+docs/pages/halSpec.md
