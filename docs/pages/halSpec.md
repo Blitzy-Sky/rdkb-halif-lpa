@@ -138,9 +138,7 @@ Two of those messages embed values that vary at run time — the pending notific
 
 ### Internal Error Handling
 
-- **Synchronous Error Handling:** Every function in this interface returns `int` and reports failure through that return value, so a caller learns of an error immediately at the call site.
-- **Internal Error Reporting:** The HAL is responsible for reporting internal system errors, such as an out-of-memory condition, through the return value.
-- **Focus on Logging for Errors:** For system errors an implementation also logs enough detail to make the cause identifiable without reproducing the failure. See `Logging and debugging requirements`.
+Every function returns an `int` status:
 
 | Macro | Value | Meaning |
 | --- | --- | --- |
@@ -152,7 +150,6 @@ Two of those messages embed values that vary at run time — the pending notific
 Caller code compares against `RETURN_ERROR`; the spelling `RETURN_ERR` is not defined by this interface and does not compile.
 
 - **The activation-code download uses a different convention, and the collision is silent:** Because `FALSE` and `RETURN_OK` are both `0`, **a caller that tests the result of `cellular_esim_download_profile_with_activationcode()` against `RETURN_OK` reads a documented failure as a success**. A caller treats a non-zero result from that function as success only once it has confirmed the convention with its vendor, and does not reuse the comparison that is correct for the other ten functions.
-- The status code is the only failure information.
 
 ### Persistence Model
 
