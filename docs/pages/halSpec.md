@@ -325,9 +325,9 @@ sequenceDiagram
     HAL-->>Caller: RETURN_OK
     Caller->>HAL: cellular_esim_download_profile_with_activationcode(code, callback)
     HAL->>Vendor: Decode activation code, authenticate with SM-DP+
-    HAL-->>Caller: callback: Activation Code decoded
+    HAL->>Caller: callback: Activation Code decoded
     Vendor-->>HAL: Bound Profile Package installed
-    HAL-->>Caller: callback: Profile download successful
+    HAL->>Caller: callback: Profile download successful
     HAL-->>Caller: TRUE
     Caller->>HAL: cellular_esim_download_profile_from_smds(smds)
     HAL->>Vendor: Connect to SM-DS address, download profile
@@ -368,9 +368,9 @@ The three download calls are alternative paths, and the three profile lifecycle 
 ```mermaid
 stateDiagram-v2
     direction LR
-    state "Installed on the eUICC" as Installed {
-        state "profileState = 0 (disabled)" as Disabled
-        state "profileState = 1 (enabled)" as Enabled
+    state "Installed on the eUICC - profileState" as Installed {
+        state "disabled = 0" as Disabled
+        state "enabled = 1" as Enabled
         Disabled --> Enabled : cellular_esim_enable_profile()
         Enabled --> Disabled : cellular_esim_disable_profile()
     }
