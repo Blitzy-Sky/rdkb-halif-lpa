@@ -183,7 +183,7 @@ An implementation should pass analysis with third-party tools such as `Coverity`
 
 This HAL is not available on the HUB6 or XER10 reference platforms, so the runtime behaviour this document describes has not been observed on reference hardware.
 
-Any change to a file listed under `Source References` obliges a review of this document by the repository's code owner, `@rdkcentral/rdkb-hal-advisory`.
+Any change to a file listed under `Source References` obliges a review of this document by the code owner listed in `.github/CODEOWNERS`.
 
 ### Licensing
 
